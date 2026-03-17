@@ -1,7 +1,7 @@
 ---
 id: "01kkx7v5m"
 title: "Implement TypeScript Claude Code CLI runner"
-status: pending
+status: completed
 priority: high
 phase: typescript
 dependencies: ["01kkx4yva"]
@@ -18,14 +18,14 @@ Implement the Claude Code CLI runner in TypeScript, following the Go implementat
 
 ## Tasks
 
-- [ ] Initialize the TypeScript package (`package.json`, `tsconfig.json`, project structure)
-- [ ] Define TypeScript common Runner interface and shared types (mirroring Go types)
-- [ ] Define Claude Code-specific option extensions and message types
-- [ ] Implement stream-json parser for Claude Code output
-- [ ] Implement `run()` and `runStream()` for the Claude Code CLI
-- [ ] Add session management (continue, resume)
-- [ ] Write tests with mock subprocess
-- [ ] Add package README
+- [x] Initialize the TypeScript package (`package.json`, `tsconfig.json`, project structure)
+- [x] Define TypeScript common Runner interface and shared types (mirroring Go types)
+- [x] Define Claude Code-specific option extensions and message types
+- [x] Implement stream-json parser for Claude Code output
+- [x] Implement `run()` and `runStream()` for the Claude Code CLI
+- [x] Add session management (continue, resume)
+- [x] Write tests with mock subprocess
+- [x] Add package README
 
 ## Acceptance Criteria
 
@@ -34,3 +34,4 @@ Implement the Claude Code CLI runner in TypeScript, following the Go implementat
 - All stream-json message types are parsed into typed TypeScript values
 - Session continue/resume is supported
 - Tests pass without requiring the real `claude` binary
+

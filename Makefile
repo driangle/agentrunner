@@ -1,7 +1,7 @@
-.PHONY: check check-go test-go lint-go build-go
+.PHONY: check check-go test-go lint-go build-go check-ts build-ts lint-ts test-ts
 
 # Top-level target: check all libraries.
-check: check-go
+check: check-go check-ts
 
 # --- Go ---
 
@@ -15,3 +15,16 @@ lint-go:
 
 test-go:
 	cd go && go test ./...
+
+# --- TypeScript ---
+
+check-ts: build-ts lint-ts test-ts
+
+build-ts:
+	cd ts && npm run build
+
+lint-ts:
+	cd ts && npm run lint
+
+test-ts:
+	cd ts && npm test
