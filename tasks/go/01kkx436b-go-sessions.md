@@ -1,7 +1,7 @@
 ---
 title: "Add Claude Code session management (continue, resume)"
 id: "01kkx436b"
-status: pending
+status: completed
 priority: medium
 type: feature
 tags: ["go"]
@@ -18,11 +18,11 @@ Add options for session management — continuing the most recent conversation o
 
 ## Tasks
 
-- [ ] Add `WithContinue()` option that adds `--continue` flag
-- [ ] Add `WithResume(sessionID string)` option that adds `--resume <id>` flag
-- [ ] Add `WithSessionID(id string)` option for `--session-id`
-- [ ] Ensure session ID is captured from the `system/init` message in results
-- [ ] Add tests verifying correct CLI argument construction
+- [x] Add `WithContinue()` option that adds `--continue` flag
+- [x] Add `WithResume(sessionID string)` option that adds `--resume <id>` flag
+- [x] Add `WithSessionID(id string)` option for `--session-id`
+- [x] Ensure session ID is captured from the `system/init` message in results
+- [x] Add tests verifying correct CLI argument construction
 
 ## Acceptance Criteria
 

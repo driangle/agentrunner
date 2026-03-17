@@ -96,6 +96,7 @@ func (r *Runner) Run(ctx context.Context, prompt string, opts ...agentrunner.Opt
 	scanner.Buffer(make([]byte, 0, 64*1024), 10*1024*1024)
 
 	var resultMsg *StreamMessage
+	var initSessionID string
 	for scanner.Scan() {
 		line := scanner.Text()
 		if line == "" {
@@ -104,6 +105,9 @@ func (r *Runner) Run(ctx context.Context, prompt string, opts ...agentrunner.Opt
 		msg, parseErr := Parse(line)
 		if parseErr != nil {
 			continue
+		}
+		if msg.Type == "system" && msg.Subtype == "init" && msg.SessionID != "" {
+			initSessionID = msg.SessionID
 		}
 		if msg.Type == "result" {
 			resultMsg = &msg
@@ -136,7 +140,13 @@ func (r *Runner) Run(ctx context.Context, prompt string, opts ...agentrunner.Opt
 		return nil, agentrunner.ErrNoResult
 	}
 
-	return mapResult(resultMsg), nil
+	result := mapResult(resultMsg)
+	// Fall back to session ID from the system/init message if the result
+	// message didn't include one.
+	if result.SessionID == "" && initSessionID != "" {
+		result.SessionID = initSessionID
+	}
+	return result, nil
 }
 
 // RunStream executes a prompt against the Claude Code CLI and streams parsed
@@ -334,6 +344,9 @@ func buildArgs(prompt string, opts *agentrunner.Options) []string {
 		}
 		if co.Continue {
 			args = append(args, "--continue")
+		}
+		if co.SessionID != "" {
+			args = append(args, "--session-id", co.SessionID)
 		}
 	}
 
