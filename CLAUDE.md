@@ -5,6 +5,7 @@ Monorepo of language-native libraries for programmatically invoking AI coding ag
 ## Project Structure
 
 ```
+Makefile      # Top-level build: `make check` verifies all libraries
 INTERFACE.md  # Language-agnostic Runner interface specification
 ts/           # TypeScript library
 go/           # Go library
@@ -12,6 +13,16 @@ python/       # Python library
 java/         # Java library
 tasks/        # taskmd task files
 ```
+
+## Build & Verification
+
+`make check` builds, lints, and tests every library. A pre-commit git hook runs it automatically.
+
+When adding a new language library:
+1. Add `check-<lang>`, `build-<lang>`, `lint-<lang>`, and `test-<lang>` targets to the Makefile.
+2. Add `check-<lang>` as a dependency of the top-level `check` target.
+
+This ensures every library is verified uniformly and the pre-commit hook catches regressions across all languages.
 
 ## Design Principles
 
@@ -30,6 +41,14 @@ Each runner (Claude Code, Gemini, Codex) implements this interface, so callers c
 ### Thin and transparent
 
 Each library should be as thin as possible — a minimal layer over the underlying CLI or API. Avoid inventing abstractions, hiding behavior, or adding logic that isn't directly required by the interface. Callers should be able to predict what the library does by knowing what the underlying tool does. Pass options through, surface errors directly, and keep the code auditable at a glance. The goal is a convenience wrapper, not a framework.
+
+### CLI version compatibility
+
+Each library must explicitly declare which versions of each CLI it supports. This serves two purposes: informing users which CLI versions to install, and enabling the library to detect incompatible versions at runtime.
+
+- **Documentation** — each library's README (or equivalent) must list the supported CLI version range for every runner it implements (e.g., "Claude Code CLI >= 1.0.12").
+- **Code metadata** — each runner implementation must define its supported version range as a constant or configuration value in code. This enables runtime version checks and makes the compatibility contract grep-able and auditable.
+- **Runtime check** — when a runner starts, it should verify the installed CLI version falls within the supported range and return a clear error if not. This prevents confusing failures from breaking CLI changes.
 
 ### Language-native conventions
 
@@ -72,6 +91,18 @@ TBD — research CLI flags and output format.
 #### Ollama (local, `ollama`)
 
 Local runner that talks to the Ollama HTTP API rather than shelling out to a CLI. Enables fully offline agent execution with locally-hosted models. TBD — research API endpoints and streaming format.
+
+### Testing strategy
+
+Every task must include unit tests for the code it introduces. Tests live alongside the code following each language's conventions.
+
+Three levels of testing:
+
+1. **Unit tests** — test individual functions, types, and logic in isolation. Pure functions, parsers, option builders, type conversions, error handling. No external processes or network calls. Every task must have unit tests.
+
+2. **Integration tests** — test runner behavior using fake/stub CLIs. Build lightweight scripts that mimic the real CLI's output format (e.g., a shell script that prints stream-json lines to stdout) and verify the runner correctly builds commands, passes arguments, parses output, and handles errors. These validate the full Run/RunStream path without requiring the real CLI to be installed.
+
+3. **E2E tests** — test against the real CLIs (`claude`, `gemini`, `codex`, `ollama`). These invoke the actual CLI binaries and verify real-world behavior. E2E tests should be gated behind a build tag or environment variable (e.g., `//go:build e2e`, `@pytest.mark.e2e`, `describe.skip`) so they don't run in CI by default, since they require CLI installation and may incur costs. Keep E2E tests minimal — a simple prompt that validates the round-trip works.
 
 ### Reference implementations (Go, Claude Code)
 

@@ -16,14 +16,15 @@ type StreamMessage struct {
 	AssistantMsg *AssistantMessage `json:"message,omitempty"`
 
 	// Result fields — present when Type == "result".
-	Result       string  `json:"result,omitempty"`
-	IsError      bool    `json:"is_error,omitempty"`
-	TotalCostUSD float64 `json:"total_cost_usd,omitempty"`
-	DurationMs   float64 `json:"duration_ms,omitempty"`
-	DurationAPIMs float64 `json:"duration_api_ms,omitempty"`
-	NumTurns     int     `json:"num_turns,omitempty"`
-	SessionID    string  `json:"session_id,omitempty"`
-	Model        string  `json:"model,omitempty"`
+	Result        string       `json:"result,omitempty"`
+	IsError       bool         `json:"is_error,omitempty"`
+	TotalCostUSD  float64      `json:"total_cost_usd,omitempty"`
+	DurationMs    float64      `json:"duration_ms,omitempty"`
+	DurationAPIMs float64      `json:"duration_api_ms,omitempty"`
+	NumTurns      int          `json:"num_turns,omitempty"`
+	SessionID     string       `json:"session_id,omitempty"`
+	Model         string       `json:"model,omitempty"`
+	Usage         *ResultUsage `json:"usage,omitempty"`
 
 	// System/init fields.
 	Tools []json.RawMessage `json:"tools,omitempty"`
@@ -121,6 +122,15 @@ type RateLimitInfo struct {
 	Utilization    float64 `json:"utilization,omitempty"`
 	ResetsAt       int64   `json:"resetsAt,omitempty"`
 	IsUsingOverage bool    `json:"isUsingOverage,omitempty"`
+}
+
+// ResultUsage carries token counts from the final result message.
+// It includes cache token fields that StreamUsage lacks.
+type ResultUsage struct {
+	InputTokens              int `json:"input_tokens,omitempty"`
+	OutputTokens             int `json:"output_tokens,omitempty"`
+	CacheCreationInputTokens int `json:"cache_creation_input_tokens,omitempty"`
+	CacheReadInputTokens     int `json:"cache_read_input_tokens,omitempty"`
 }
 
 // StreamUsage carries token counts from streaming events.
