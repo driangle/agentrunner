@@ -1,7 +1,7 @@
 ---
 title: "Refactor to Session object pattern (read side only)"
 id: "01kkyd54q"
-status: pending
+status: completed
 priority: high
 type: feature
 effort: large
@@ -136,15 +136,15 @@ result, err := session.Result()
 
 ## Tasks
 
-- [ ] Define the `Session` type/interface for each language with: messages, result, abort, and a placeholder/reserved `send` method signature
-- [ ] **Go**: refactor `claudecode` runner to return a `Session`; `Run` and `RunStream` wrap it
-- [ ] **TypeScript**: refactor `claudecode` runner to return a `Session`; `Run` and `RunStream` wrap it
-- [ ] **Python**: refactor `claudecode` runner to return a `Session`; `run` and `run_stream` wrap it
-- [ ] **Java**: refactor `claudecode` runner to return a `Session`; `run` and `runStream` wrap it
-- [ ] Update unit tests in all languages to test the Session API directly
-- [ ] Update integration tests (fake CLI) to exercise Session lifecycle (messages → result, abort mid-stream)
-- [ ] Update example programs to use the new API
-- [ ] Update INTERFACE.md to document the Session pattern
+- [x] Define the `Session` type/interface for each language with: messages, result, abort, and a placeholder/reserved `send` method signature
+- [x] **Go**: refactor `claudecode` runner to return a `Session`; `Run` and `RunStream` wrap it
+- [x] **TypeScript**: refactor `claudecode` runner to return a `Session`; `Run` and `RunStream` wrap it
+- [x] **Python**: refactor `claudecode` runner to return a `Session`; `run` and `run_stream` wrap it
+- [x] **Java**: refactor `claudecode` runner to return a `Session`; `run` and `runStream` wrap it
+- [x] Update unit tests in all languages to test the Session API directly
+- [x] Update integration tests (fake CLI) to exercise Session lifecycle (messages → result, abort mid-stream)
+- [x] Update example programs to use the new API
+- [x] Update INTERFACE.md to document the Session pattern
 
 ## Acceptance Criteria
 

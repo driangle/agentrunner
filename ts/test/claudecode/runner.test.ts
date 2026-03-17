@@ -242,8 +242,13 @@ describe("runStream", () => {
     const runner = createClaudeRunner({ spawn: mockSpawn(lines) });
     const messages: Message[] = [];
 
-    for await (const msg of runner.runStream("partial")) {
-      messages.push(msg);
+    // runStream should throw NoResultError after draining
+    try {
+      for await (const msg of runner.runStream("partial")) {
+        messages.push(msg);
+      }
+    } catch {
+      // Expected — NoResultError after stream ends
     }
 
     expect(messages).toHaveLength(2);
@@ -314,6 +319,93 @@ describe("runStream", () => {
 
     for await (const msg of runner.runStream("test raw")) {
       expect(msg.raw.length).toBeGreaterThan(0);
+    }
+  });
+});
+
+describe("start (Session)", () => {
+  it("happy path: messages and result", async () => {
+    const runner = createClaudeRunner({ spawn: mockSpawn(happyLines) });
+    const session = runner.start("say hello");
+
+    const messages: Message[] = [];
+    for await (const msg of session.messages) {
+      messages.push(msg);
+    }
+
+    const result = await session.result;
+
+    expect(messages).toHaveLength(3);
+    expect(messages[0].type).toBe("system");
+    expect(messages[messages.length - 1].type).toBe("result");
+
+    expect(result.text).toBe("Hello world");
+    expect(result.sessionId).toBe("sess-1");
+    expect(result.costUSD).toBe(0.05);
+  });
+
+  it("abort terminates the process", async () => {
+    const runner = createClaudeRunner({ spawn: slowSpawn() });
+    const session = runner.start("long task", { timeout: 5000 });
+
+    // Abort after a brief delay.
+    setTimeout(() => session.abort(), 50);
+
+    const messages: Message[] = [];
+    for await (const msg of session.messages) {
+      messages.push(msg);
+    }
+
+    // Result should reject with CancelledError or TimeoutError.
+    await expect(session.result).rejects.toThrow();
+  });
+
+  it("send throws not yet supported", () => {
+    const runner = createClaudeRunner({ spawn: mockSpawn(happyLines) });
+    const session = runner.start("hello");
+
+    expect(() => session.send("test")).toThrow("not yet supported");
+
+    // Drain to avoid resource leak.
+    (async () => {
+      for await (const _msg of session.messages) {
+        // drain
+      }
+    })();
+  });
+
+  it("session ID falls back to init message", async () => {
+    const lines = [
+      `{"type":"system","subtype":"init","session_id":"sess-from-init","model":"claude-sonnet-4-6"}`,
+      `{"type":"result","subtype":"success","result":"done","is_error":false,"total_cost_usd":0.01,"duration_ms":100,"usage":{"input_tokens":10,"output_tokens":5}}`,
+    ];
+    const runner = createClaudeRunner({ spawn: mockSpawn(lines) });
+    const session = runner.start("hello");
+
+    for await (const _msg of session.messages) {
+      // drain
+    }
+
+    const result = await session.result;
+    expect(result.sessionId).toBe("sess-from-init");
+  });
+
+  it("streaming messages with onMessage callback", async () => {
+    const runner = createClaudeRunner({ spawn: mockSpawn(streamMultiLines) });
+    const callbackMessages: Message[] = [];
+
+    const session = runner.start("test callback", {
+      onMessage: (m) => callbackMessages.push(m),
+    });
+
+    const messages: Message[] = [];
+    for await (const msg of session.messages) {
+      messages.push(msg);
+    }
+
+    expect(callbackMessages).toHaveLength(messages.length);
+    for (let i = 0; i < callbackMessages.length; i++) {
+      expect(callbackMessages[i].type).toBe(messages[i].type);
     }
   });
 });

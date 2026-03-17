@@ -87,8 +87,26 @@ export interface RunOptions {
   skipPermissions?: boolean;
 }
 
+/** Session encapsulates a running agent process. */
+export interface Session {
+  /** Iterable of messages as they arrive. */
+  messages: AsyncIterable<Message>;
+
+  /** Resolves when the agent finishes with the final result. */
+  result: Promise<Result>;
+
+  /** Terminates the agent process. */
+  abort(): void;
+
+  /** Reserved for future write-side support. Throws "not yet supported". */
+  send(input: unknown): void;
+}
+
 /** Runner executes prompts against an AI coding agent. */
 export interface Runner {
+  /** Launch an agent process and return a Session for full control. */
+  start(prompt: string, options?: RunOptions): Session;
+
   /** Send a prompt and block until the agent finishes. */
   run(prompt: string, options?: RunOptions): Promise<Result>;
 

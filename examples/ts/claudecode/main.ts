@@ -1,6 +1,6 @@
 // This example demonstrates how to use the agentrunner TypeScript library to
 // invoke Claude Code CLI programmatically, covering basic usage, streaming,
-// and session management.
+// session management, and the Session object pattern.
 //
 // Prerequisites:
 //   - Claude Code CLI installed (>= 1.0.12): https://docs.anthropic.com/en/docs/claude-code
@@ -48,6 +48,10 @@ async function main() {
   // --- Example 3: Session Resume ---
   console.log("\n=== Example 3: Session Resume ===");
   await exampleSessionResume(runner);
+
+  // --- Example 4: Session Object ---
+  console.log("\n=== Example 4: Session Object ===");
+  await exampleSession(runner);
 }
 
 /** Send a single prompt and print the result. */
@@ -154,6 +158,30 @@ async function exampleSessionResume(runner: Runner) {
   const second = await runner.run(prompt2, resumeOptions);
 
   console.log(`Response: ${second.text}`);
+}
+
+/** Demonstrate the Session object pattern with full lifecycle control. */
+async function exampleSession(runner: Runner) {
+  const prompt = "What is the capital of France? Reply with just the city name.";
+  console.log(`Prompt: ${prompt}`);
+
+  const session = runner.start(prompt, {
+    maxTurns: 1,
+    timeout: 30_000,
+  });
+
+  // Iterate messages as they arrive.
+  for await (const msg of session.messages) {
+    const preview = msg.raw.length > 80 ? msg.raw.slice(0, 80) + "..." : msg.raw;
+    console.log(`[${msg.type}] ${preview}`);
+  }
+
+  // Get the final result.
+  const result = await session.result;
+
+  console.log(`Response: ${result.text}`);
+  console.log(`Cost:     $${result.costUSD.toFixed(4)}`);
+  console.log(`Session:  ${result.sessionId}`);
 }
 
 main().catch((err) => {

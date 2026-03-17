@@ -4,18 +4,45 @@ This document defines the language-agnostic Runner interface that all implementa
 
 ## Runner
 
-A Runner executes prompts against an AI coding agent and returns results.
+A Runner executes prompts against an AI coding agent and returns results. The primary primitive is `Start`, which returns a **Session** object representing a running agent process. `Run` and `RunStream` are thin convenience wrappers over `Start`.
 
 ```
 Runner:
+  Start(prompt, options)     → Session
   Run(prompt, options)       → Result
   RunStream(prompt, options) → Stream<Message>
 ```
 
-- **Run** sends a prompt and blocks until the agent finishes. Returns the final result.
-- **RunStream** sends a prompt and yields messages as they arrive. The final message contains the result.
+- **Start** launches an agent process and returns a Session for full control over the lifecycle.
+- **Run** starts a session, drains all messages internally, and returns the final result.
+- **RunStream** starts a session and returns the messages iterable (the session's result is accessible separately).
 
-Both methods accept the same options. `Run` is a convenience — it is equivalent to consuming `RunStream` and returning only the final result.
+Both `Run` and `RunStream` delegate to `Start`. All three accept the same options.
+
+---
+
+## Session
+
+A Session encapsulates a running agent process. It exposes the read side — messages, result, and abort — while reserving a `send` method for future write-side support.
+
+```
+Session:
+  messages → Stream<Message>   — iterable of messages as they arrive
+  result   → Result            — blocks/resolves when the agent finishes
+  abort()  → void              — terminates the agent process
+  send()   → error             — reserved, throws "not yet supported"
+```
+
+### Language-Idiomatic Session
+
+| Language   | Messages (read)                        | Result                        | Abort               |
+|------------|----------------------------------------|-------------------------------|----------------------|
+| TypeScript | `AsyncIterable<Message>`               | `Promise<Result>`             | `abort(): void`      |
+| Go         | `<-chan Message`                        | `Result() (Result, error)`    | `context.Cancel()`   |
+| Python     | `async for msg in session`             | `await session.result`        | `session.abort()`    |
+| Java       | `Iterator<Message>` / `Flow.Publisher` | `CompletableFuture<Result>`   | `session.abort()`    |
+
+The session must be safe to abandon. Abandoning a session (not draining messages, not awaiting result) should terminate the underlying process.
 
 ---
 
@@ -163,11 +190,11 @@ Each message type has typed accessor methods/properties for its data, avoiding t
 
 ## Stream
 
-The return type of `RunStream` — a language-native streaming primitive.
+The return type of `RunStream` and `Session.messages` — a language-native streaming primitive.
 
 | Language   | Type                       | Notes                              |
 |------------|----------------------------|------------------------------------|
-| Go         | `iter.Seq2[Message, error]`| Go 1.23+ range-over-func iterator  |
+| Go         | `<-chan Message`           | Channel-based streaming            |
 | TypeScript | `AsyncIterable<Message>`   | `for await (const msg of stream)`  |
 | Python     | `AsyncIterator[Message]`   | `async for msg in stream`          |
 | Java       | `Stream<Message>`          | Or `Flux<Message>` for reactive    |
@@ -206,9 +233,18 @@ Implementations should distinguish these error categories using language-appropr
 ### Go
 
 ```go
+type Session struct {
+    Messages <-chan Message
+}
+
+func (s *Session) Result() (*Result, error)  // blocks until done
+func (s *Session) Abort()                    // cancels context + kills process
+func (s *Session) Send(input any) error      // returns ErrNotSupported
+
 type Runner interface {
+    Start(ctx context.Context, prompt string, opts ...Option) *Session
     Run(ctx context.Context, prompt string, opts ...Option) (*Result, error)
-    RunStream(ctx context.Context, prompt string, opts ...Option) iter.Seq2[Message, error]
+    RunStream(ctx context.Context, prompt string, opts ...Option) (<-chan Message, <-chan error)
 }
 
 // Options via functional options pattern
@@ -228,7 +264,15 @@ func WithMCPConfig(path string) Option
 ### TypeScript
 
 ```typescript
+interface Session {
+  messages: AsyncIterable<Message>;
+  result: Promise<Result>;
+  abort(): void;
+  send(input: unknown): void; // reserved — throws "not yet supported"
+}
+
 interface Runner {
+  start(prompt: string, options?: RunOptions): Session;
   run(prompt: string, options?: RunOptions): Promise<Result>;
   runStream(prompt: string, options?: RunOptions): AsyncIterable<Message>;
 }
@@ -253,7 +297,14 @@ interface ClaudeRunOptions extends RunOptions {
 ### Python
 
 ```python
+class Session:
+    async def __aiter__(self) -> AsyncIterator[Message]: ...
+    result: Awaitable[Result]
+    def abort(self) -> None: ...
+    def send(self, input: Any) -> None: ...  # reserved — raises NotImplementedError
+
 class Runner(Protocol):
+    def start(self, prompt: str, **options: Unpack[RunOptions]) -> Session: ...
     async def run(self, prompt: str, **options: Unpack[RunOptions]) -> Result: ...
     def run_stream(self, prompt: str, **options: Unpack[RunOptions]) -> AsyncIterator[Message]: ...
 
@@ -276,7 +327,15 @@ class ClaudeRunOptions(RunOptions):
 ### Java
 
 ```java
+public interface Session {
+    Iterator<Message> messages();
+    CompletableFuture<Result> result();
+    void abort();
+    void send(Object input); // reserved — throws UnsupportedOperationException
+}
+
 public interface Runner {
+    Session start(String prompt, RunOptions options);
     Result run(String prompt, RunOptions options);
     Stream<Message> runStream(String prompt, RunOptions options);
 }

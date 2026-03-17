@@ -67,6 +67,8 @@ func helperBuilder(mode string) CommandBuilder {
 	}
 }
 
+// --- Run tests (delegate to Start) ---
+
 func TestRunHappyPath(t *testing.T) {
 	r := NewRunner(WithCommandBuilder(helperBuilder("happy")))
 	result, err := r.Run(context.Background(), "say hello")
@@ -192,6 +194,8 @@ func TestRunNotFound(t *testing.T) {
 		t.Errorf("err = %v, want to contain ErrNotFound", err)
 	}
 }
+
+// --- Argument building tests ---
 
 func TestBuildArgsMinimal(t *testing.T) {
 	opts := &agentrunner.Options{}
@@ -510,5 +514,127 @@ func TestRunStreamRawJSON(t *testing.T) {
 
 	if err := <-errCh; err != nil {
 		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+// --- Session (Start) tests ---
+
+func TestStartHappyPath(t *testing.T) {
+	r := NewRunner(WithCommandBuilder(helperBuilder("happy")))
+	session := r.Start(context.Background(), "say hello")
+
+	var messages []agentrunner.Message
+	for msg := range session.Messages {
+		messages = append(messages, msg)
+	}
+
+	result, err := session.Result()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if result.Text != "Hello world" {
+		t.Errorf("text = %q, want %q", result.Text, "Hello world")
+	}
+	if result.SessionID != "sess-1" {
+		t.Errorf("session_id = %q, want %q", result.SessionID, "sess-1")
+	}
+
+	// Should have received system + assistant + result = 3 messages
+	if len(messages) != 3 {
+		t.Errorf("got %d messages, want 3", len(messages))
+	}
+}
+
+func TestStartAbortMidStream(t *testing.T) {
+	r := NewRunner(WithCommandBuilder(helperBuilder("slow")))
+	session := r.Start(context.Background(), "long task")
+
+	// Give the process a moment to start, then abort.
+	time.Sleep(50 * time.Millisecond)
+	session.Abort()
+
+	// Drain messages.
+	for range session.Messages {
+	}
+
+	_, err := session.Result()
+	if err != agentrunner.ErrCancelled {
+		t.Errorf("err = %v, want ErrCancelled", err)
+	}
+}
+
+func TestStartMessagesAndResult(t *testing.T) {
+	r := NewRunner(WithCommandBuilder(helperBuilder("stream_multi")))
+	session := r.Start(context.Background(), "test session")
+
+	var types []agentrunner.MessageType
+	for msg := range session.Messages {
+		types = append(types, msg.Type)
+	}
+
+	// Verify ordering.
+	if len(types) == 0 {
+		t.Fatal("no messages received")
+	}
+	if types[0] != agentrunner.MessageTypeSystem {
+		t.Errorf("first type = %q, want system", types[0])
+	}
+	if types[len(types)-1] != agentrunner.MessageTypeResult {
+		t.Errorf("last type = %q, want result", types[len(types)-1])
+	}
+
+	result, err := session.Result()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result.Text != "Hello world" {
+		t.Errorf("text = %q, want %q", result.Text, "Hello world")
+	}
+}
+
+func TestStartTimeout(t *testing.T) {
+	r := NewRunner(WithCommandBuilder(helperBuilder("slow")))
+	session := r.Start(context.Background(), "hello",
+		agentrunner.WithTimeout(100*time.Millisecond))
+
+	for range session.Messages {
+	}
+
+	_, err := session.Result()
+	if err != agentrunner.ErrTimeout {
+		t.Errorf("err = %v, want ErrTimeout", err)
+	}
+}
+
+func TestStartSendNotSupported(t *testing.T) {
+	r := NewRunner(WithCommandBuilder(helperBuilder("happy")))
+	session := r.Start(context.Background(), "hello")
+
+	err := session.Send("test input")
+	if err != agentrunner.ErrNotSupported {
+		t.Errorf("err = %v, want ErrNotSupported", err)
+	}
+
+	// Drain to avoid goroutine leak.
+	for range session.Messages {
+	}
+	session.Result()
+}
+
+func TestStartNotFound(t *testing.T) {
+	r := NewRunner(WithBinary("nonexistent-binary-xyz"))
+	session := r.Start(context.Background(), "hello")
+
+	// Drain messages (should be none).
+	for range session.Messages {
+	}
+
+	_, err := session.Result()
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if !strings.Contains(err.Error(), agentrunner.ErrNotFound.Error()) {
+		t.Errorf("err = %v, want to contain ErrNotFound", err)
 	}
 }

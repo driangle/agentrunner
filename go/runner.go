@@ -10,8 +10,63 @@ import (
 	"time"
 )
 
+// Session encapsulates a running agent process. It exposes the read side
+// (messages iterable, result, abort) while reserving a send method for future
+// write-side support.
+type Session struct {
+	// Messages receives parsed messages as they arrive. The channel is closed
+	// when the agent process finishes or is aborted.
+	Messages <-chan Message
+
+	// resultCh receives the final result (or error) once the process completes.
+	resultCh chan ResultOrError
+
+	// abort cancels the underlying context, terminating the agent process.
+	abort context.CancelFunc
+}
+
+// ResultOrError holds either a result or an error from a completed session.
+type ResultOrError struct {
+	Result *Result
+	Err    error
+}
+
+// Result blocks until the agent finishes and returns the final result.
+func (s *Session) Result() (*Result, error) {
+	r, ok := <-s.resultCh
+	if !ok {
+		return nil, ErrNoResult
+	}
+	return r.Result, r.Err
+}
+
+// Abort terminates the agent process.
+func (s *Session) Abort() {
+	if s.abort != nil {
+		s.abort()
+	}
+}
+
+// Send is reserved for future write-side support (e.g. permission responses).
+// It currently returns ErrNotSupported.
+func (s *Session) Send(_ any) error {
+	return ErrNotSupported
+}
+
+// NewSession creates a Session with the given channels and abort function.
+func NewSession(messages <-chan Message, resultCh chan ResultOrError, abort context.CancelFunc) *Session {
+	return &Session{
+		Messages: messages,
+		resultCh: resultCh,
+		abort:    abort,
+	}
+}
+
 // Runner executes prompts against an AI coding agent and returns results.
 type Runner interface {
+	// Start launches an agent process and returns a Session for full control.
+	Start(ctx context.Context, prompt string, opts ...Option) *Session
+
 	// Run sends a prompt and blocks until the agent finishes.
 	Run(ctx context.Context, prompt string, opts ...Option) (*Result, error)
 
@@ -175,4 +230,7 @@ var (
 
 	// ErrNoResult indicates the stream ended without a result message.
 	ErrNoResult = errors.New("no result in output")
+
+	// ErrNotSupported indicates the operation is not yet supported.
+	ErrNotSupported = errors.New("not yet supported")
 )

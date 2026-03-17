@@ -1,6 +1,6 @@
 // This example demonstrates how to use the agentrunner Go library to invoke
-// Claude Code CLI programmatically, covering basic usage, streaming, and
-// session management.
+// Claude Code CLI programmatically, covering basic usage, streaming, session
+// management, and the Session object pattern.
 //
 // Prerequisites:
 //   - Claude Code CLI installed (>= 1.0.12): https://docs.anthropic.com/en/docs/claude-code
@@ -65,6 +65,12 @@ func run(runnerOpts []claudecode.RunnerOption, verbose bool) error {
 	fmt.Println("\n=== Example 3: Session Resume ===")
 	if err := exampleSessionResume(ctx, runner); err != nil {
 		return fmt.Errorf("session resume: %w", err)
+	}
+
+	// --- Example 4: Session Object ---
+	fmt.Println("\n=== Example 4: Session Object ===")
+	if err := exampleSession(ctx, runner); err != nil {
+		return fmt.Errorf("session: %w", err)
 	}
 
 	return nil
@@ -189,5 +195,33 @@ func exampleSessionResume(ctx context.Context, runner *claudecode.Runner) error 
 		return err
 	}
 	fmt.Printf("Response: %s\n", result.Text)
+	return nil
+}
+
+// exampleSession demonstrates the Session object pattern with full control
+// over the lifecycle: iterating messages, accessing the result, and aborting.
+func exampleSession(ctx context.Context, runner *claudecode.Runner) error {
+	prompt := "What is the capital of France? Reply with just the city name."
+	fmt.Printf("Prompt: %s\n", prompt)
+
+	session := runner.Start(ctx, prompt,
+		agentrunner.WithMaxTurns(1),
+		agentrunner.WithTimeout(30*time.Second),
+	)
+
+	// Iterate messages as they arrive.
+	for msg := range session.Messages {
+		fmt.Printf("[%s] %s\n", msg.Type, string(msg.Raw)[:min(80, len(msg.Raw))])
+	}
+
+	// Get the final result.
+	result, err := session.Result()
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("Response: %s\n", result.Text)
+	fmt.Printf("Cost:     $%.4f\n", result.CostUSD)
+	fmt.Printf("Session:  %s\n", result.SessionID)
 	return nil
 }

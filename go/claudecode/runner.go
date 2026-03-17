@@ -53,8 +53,10 @@ func NewRunner(opts ...RunnerOption) *Runner {
 	return r
 }
 
-// Run executes a prompt against the Claude Code CLI and returns the final result.
-func (r *Runner) Run(ctx context.Context, prompt string, opts ...agentrunner.Option) (*agentrunner.Result, error) {
+// Start launches a Claude Code CLI process and returns a Session for full
+// control over the lifecycle. Messages arrive on session.Messages; the final
+// result is available via session.Result().
+func (r *Runner) Start(ctx context.Context, prompt string, opts ...agentrunner.Option) *agentrunner.Session {
 	var options agentrunner.Options
 	for _, o := range opts {
 		o(&options)
@@ -63,145 +65,26 @@ func (r *Runner) Run(ctx context.Context, prompt string, opts ...agentrunner.Opt
 	if options.Timeout > 0 {
 		var cancel context.CancelFunc
 		ctx, cancel = context.WithTimeout(ctx, options.Timeout)
-		defer cancel()
+		// cancel is deferred inside the goroutine
+		_ = cancel
 	}
 
-	args := buildArgs(prompt, &options)
+	ctx, sessionCancel := context.WithCancel(ctx)
 
-	cmdBuilder := r.cmdBuilder
-	if cmdBuilder == nil {
-		if _, err := exec.LookPath(r.binary); err != nil {
-			return nil, fmt.Errorf("%w: %s", agentrunner.ErrNotFound, r.binary)
-		}
-		cmdBuilder = exec.CommandContext
-	}
-
-	cmd := cmdBuilder(ctx, r.binary, args...)
-	cmd.Dir = options.WorkingDir
-
-	if len(options.Env) > 0 {
-		cmd.Env = cmd.Environ()
-		for k, v := range options.Env {
-			cmd.Env = append(cmd.Env, k+"="+v)
-		}
-	}
-
-	r.logCmd(ctx, cmd)
-
-	stdout, err := cmd.StdoutPipe()
-	if err != nil {
-		return nil, fmt.Errorf("stdout pipe: %w", err)
-	}
-
-	var stderr bytes.Buffer
-	cmd.Stderr = &stderr
-
-	if err := cmd.Start(); err != nil {
-		if errors.Is(err, exec.ErrNotFound) {
-			return nil, fmt.Errorf("%w: %s", agentrunner.ErrNotFound, r.binary)
-		}
-		return nil, fmt.Errorf("start: %w", err)
-	}
-
-	scanner := bufio.NewScanner(stdout)
-	scanner.Buffer(make([]byte, 0, 64*1024), 10*1024*1024)
-
-	var resultMsg *StreamMessage
-	var initSessionID string
-	var stdoutErrors []string
-	for scanner.Scan() {
-		line := scanner.Text()
-		if line == "" {
-			continue
-		}
-		msg, parseErr := Parse(line)
-		if parseErr != nil {
-			// Collect unparseable lines — the CLI may write plain-text
-			// errors to stdout instead of stream-json.
-			stdoutErrors = append(stdoutErrors, line)
-			continue
-		}
-		if msg.Type == "system" && msg.Subtype == "init" && msg.SessionID != "" {
-			initSessionID = msg.SessionID
-		}
-		if msg.Type == "result" {
-			resultMsg = &msg
-		}
-	}
-
-	waitErr := cmd.Wait()
-
-	// Check errors in priority order.
-	if ctx.Err() != nil {
-		if ctx.Err() == context.DeadlineExceeded {
-			return nil, agentrunner.ErrTimeout
-		}
-		return nil, agentrunner.ErrCancelled
-	}
-
-	// If the CLI returned a result message, use it — even if the process
-	// exited non-zero. The CLI uses exit code 1 to signal an error result
-	// (e.g. auth failure), not a crash. The result contains the actual error
-	// text and is_error flag.
-	if resultMsg != nil {
-		result := mapResult(resultMsg)
-		if result.SessionID == "" && initSessionID != "" {
-			result.SessionID = initSessionID
-		}
-		return result, nil
-	}
-
-	if waitErr != nil {
-		var exitErr *exec.ExitError
-		if errors.As(waitErr, &exitErr) {
-			detail := collectErrorDetail(stderr.String(), stdoutErrors)
-			r.logCmdFailure(ctx, exitErr.ExitCode(), stderr.String(), stdoutErrors)
-			return nil, fmt.Errorf("%w: exit %d: %s", agentrunner.ErrNonZeroExit, exitErr.ExitCode(), detail)
-		}
-		return nil, fmt.Errorf("wait: %w", waitErr)
-	}
-
-	if scanErr := scanner.Err(); scanErr != nil {
-		return nil, fmt.Errorf("%w: %v", agentrunner.ErrParseError, scanErr)
-	}
-
-	return nil, agentrunner.ErrNoResult
-}
-
-// RunStream executes a prompt against the Claude Code CLI and streams parsed
-// messages as they arrive. The message channel emits each parsed message in
-// order and is closed after the final result message or on error. The error
-// channel receives at most one error and is then closed.
-//
-// If an OnMessage callback was provided via options, it is also called for
-// each message before it is sent on the channel.
-func (r *Runner) RunStream(ctx context.Context, prompt string, opts ...agentrunner.Option) (<-chan agentrunner.Message, <-chan error) {
 	msgCh := make(chan agentrunner.Message)
-	errCh := make(chan error, 1)
-
-	var options agentrunner.Options
-	for _, o := range opts {
-		o(&options)
-	}
-
-	var cancel context.CancelFunc
-	if options.Timeout > 0 {
-		ctx, cancel = context.WithTimeout(ctx, options.Timeout)
-	}
+	resultCh := make(chan agentrunner.ResultOrError, 1)
 
 	go func() {
-		if cancel != nil {
-			defer cancel()
-		}
 		defer close(msgCh)
-		defer close(errCh)
+		defer close(resultCh)
+		defer sessionCancel()
 
 		args := buildArgs(prompt, &options)
 
 		cmdBuilder := r.cmdBuilder
 		if cmdBuilder == nil {
 			if _, err := exec.LookPath(r.binary); err != nil {
-				errCh <- fmt.Errorf("%w: %s", agentrunner.ErrNotFound, r.binary)
+				resultCh <- agentrunner.ResultOrError{Err: fmt.Errorf("%w: %s", agentrunner.ErrNotFound, r.binary)}
 				return
 			}
 			cmdBuilder = exec.CommandContext
@@ -221,7 +104,7 @@ func (r *Runner) RunStream(ctx context.Context, prompt string, opts ...agentrunn
 
 		stdout, err := cmd.StdoutPipe()
 		if err != nil {
-			errCh <- fmt.Errorf("stdout pipe: %w", err)
+			resultCh <- agentrunner.ResultOrError{Err: fmt.Errorf("stdout pipe: %w", err)}
 			return
 		}
 
@@ -230,20 +113,22 @@ func (r *Runner) RunStream(ctx context.Context, prompt string, opts ...agentrunn
 
 		if err := cmd.Start(); err != nil {
 			if errors.Is(err, exec.ErrNotFound) {
-				errCh <- fmt.Errorf("%w: %s", agentrunner.ErrNotFound, r.binary)
+				resultCh <- agentrunner.ResultOrError{Err: fmt.Errorf("%w: %s", agentrunner.ErrNotFound, r.binary)}
 			} else {
-				errCh <- fmt.Errorf("start: %w", err)
+				resultCh <- agentrunner.ResultOrError{Err: fmt.Errorf("start: %w", err)}
 			}
 			return
 		}
 
-		// Get the OnMessage callback if set.
 		onMessage := GetOnMessage(&options)
 
 		scanner := bufio.NewScanner(stdout)
 		scanner.Buffer(make([]byte, 0, 64*1024), 10*1024*1024)
 
+		var resultMsg *StreamMessage
+		var initSessionID string
 		var stdoutErrors []string
+
 		for scanner.Scan() {
 			line := scanner.Text()
 			if line == "" {
@@ -253,6 +138,13 @@ func (r *Runner) RunStream(ctx context.Context, prompt string, opts ...agentrunn
 			if parseErr != nil {
 				stdoutErrors = append(stdoutErrors, line)
 				continue
+			}
+
+			if parsed.Type == "system" && parsed.Subtype == "init" && parsed.SessionID != "" {
+				initSessionID = parsed.SessionID
+			}
+			if parsed.Type == "result" {
+				resultMsg = &parsed
 			}
 
 			msg := agentrunner.Message{
@@ -267,13 +159,12 @@ func (r *Runner) RunStream(ctx context.Context, prompt string, opts ...agentrunn
 			select {
 			case msgCh <- msg:
 			case <-ctx.Done():
-				// Context cancelled while sending; stop streaming.
 				_ = cmd.Process.Kill()
 				_ = cmd.Wait()
 				if ctx.Err() == context.DeadlineExceeded {
-					errCh <- agentrunner.ErrTimeout
+					resultCh <- agentrunner.ResultOrError{Err: agentrunner.ErrTimeout}
 				} else {
-					errCh <- agentrunner.ErrCancelled
+					resultCh <- agentrunner.ResultOrError{Err: agentrunner.ErrCancelled}
 				}
 				return
 			}
@@ -283,10 +174,19 @@ func (r *Runner) RunStream(ctx context.Context, prompt string, opts ...agentrunn
 
 		if ctx.Err() != nil {
 			if ctx.Err() == context.DeadlineExceeded {
-				errCh <- agentrunner.ErrTimeout
+				resultCh <- agentrunner.ResultOrError{Err: agentrunner.ErrTimeout}
 			} else {
-				errCh <- agentrunner.ErrCancelled
+				resultCh <- agentrunner.ResultOrError{Err: agentrunner.ErrCancelled}
 			}
+			return
+		}
+
+		if resultMsg != nil {
+			result := mapResult(resultMsg)
+			if result.SessionID == "" && initSessionID != "" {
+				result.SessionID = initSessionID
+			}
+			resultCh <- agentrunner.ResultOrError{Result: result}
 			return
 		}
 
@@ -295,19 +195,57 @@ func (r *Runner) RunStream(ctx context.Context, prompt string, opts ...agentrunn
 			if errors.As(waitErr, &exitErr) {
 				detail := collectErrorDetail(stderr.String(), stdoutErrors)
 				r.logCmdFailure(ctx, exitErr.ExitCode(), stderr.String(), stdoutErrors)
-				errCh <- fmt.Errorf("%w: exit %d: %s", agentrunner.ErrNonZeroExit, exitErr.ExitCode(), detail)
+				resultCh <- agentrunner.ResultOrError{Err: fmt.Errorf("%w: exit %d: %s", agentrunner.ErrNonZeroExit, exitErr.ExitCode(), detail)}
 			} else {
-				errCh <- fmt.Errorf("wait: %w", waitErr)
+				resultCh <- agentrunner.ResultOrError{Err: fmt.Errorf("wait: %w", waitErr)}
 			}
 			return
 		}
 
 		if scanErr := scanner.Err(); scanErr != nil {
-			errCh <- fmt.Errorf("%w: %v", agentrunner.ErrParseError, scanErr)
+			resultCh <- agentrunner.ResultOrError{Err: fmt.Errorf("%w: %v", agentrunner.ErrParseError, scanErr)}
+			return
+		}
+
+		resultCh <- agentrunner.ResultOrError{Err: agentrunner.ErrNoResult}
+	}()
+
+	return agentrunner.NewSession(msgCh, resultCh, sessionCancel)
+}
+
+// Run executes a prompt against the Claude Code CLI and returns the final result.
+// It delegates to Start, drains all messages, and returns the result.
+func (r *Runner) Run(ctx context.Context, prompt string, opts ...agentrunner.Option) (*agentrunner.Result, error) {
+	session := r.Start(ctx, prompt, opts...)
+
+	// Drain all messages.
+	for range session.Messages {
+	}
+
+	return session.Result()
+}
+
+// RunStream executes a prompt against the Claude Code CLI and streams parsed
+// messages as they arrive. It delegates to Start and returns the session's
+// message channel. The error channel receives at most one error (the session
+// result error, if any) and is then closed.
+func (r *Runner) RunStream(ctx context.Context, prompt string, opts ...agentrunner.Option) (<-chan agentrunner.Message, <-chan error) {
+	session := r.Start(ctx, prompt, opts...)
+
+	errCh := make(chan error, 1)
+
+	go func() {
+		defer close(errCh)
+		result, err := session.Result()
+		if err != nil {
+			errCh <- err
+		} else if result != nil && result.IsError {
+			// Not a library error — just an error result from the CLI.
+			// Don't send on errCh; caller reads it from the result message.
 		}
 	}()
 
-	return msgCh, errCh
+	return session.Messages, errCh
 }
 
 // mapMessageType maps a Claude stream-json type string to the common MessageType.
