@@ -1,7 +1,7 @@
 ---
 title: "Add Claude Code streaming callback support"
 id: "01kkx4369"
-status: in-progress
+status: completed
 priority: medium
 type: feature
 tags: ["go"]
