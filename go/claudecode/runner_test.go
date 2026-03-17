@@ -41,6 +41,9 @@ func TestHelperProcess(t *testing.T) {
 	case "stream_no_result":
 		fmt.Println(`{"type":"system","subtype":"init","session_id":"sess-nr"}`)
 		fmt.Println(`{"type":"assistant","message":{"model":"claude-sonnet-4-6","id":"msg_01","content":[{"type":"text","text":"partial"}]}}`)
+	case "init_session_only":
+		fmt.Println(`{"type":"system","subtype":"init","session_id":"sess-from-init","model":"claude-sonnet-4-6"}`)
+		fmt.Println(`{"type":"result","subtype":"success","result":"done","is_error":false,"total_cost_usd":0.01,"duration_ms":100,"usage":{"input_tokens":10,"output_tokens":5}}`)
 	case "slow":
 		time.Sleep(5 * time.Second)
 		fmt.Println(`{"type":"result","subtype":"success","result":"late","session_id":"sess-slow"}`)
@@ -166,6 +169,19 @@ func TestRunCancelled(t *testing.T) {
 	}
 }
 
+func TestRunSessionIDFromInit(t *testing.T) {
+	r := NewRunner(WithCommandBuilder(helperBuilder("init_session_only")))
+	result, err := r.Run(context.Background(), "hello")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	// The result message has no session_id, so it should fall back to the
+	// session_id from the system/init message.
+	if result.SessionID != "sess-from-init" {
+		t.Errorf("session_id = %q, want %q", result.SessionID, "sess-from-init")
+	}
+}
+
 func TestRunNotFound(t *testing.T) {
 	r := NewRunner(WithBinary("nonexistent-binary-xyz"))
 	_, err := r.Run(context.Background(), "hello")
@@ -249,6 +265,17 @@ func TestBuildArgsClaudeOptions(t *testing.T) {
 		if !strings.Contains(joined, s) {
 			t.Errorf("args missing %q: %v", s, args)
 		}
+	}
+}
+
+func TestBuildArgsSessionID(t *testing.T) {
+	opts := &agentrunner.Options{}
+	WithSessionID("my-session-42")(opts)
+	args := buildArgs("test", opts)
+
+	joined := strings.Join(args, " ")
+	if !strings.Contains(joined, "--session-id my-session-42") {
+		t.Errorf("args missing --session-id: %v", args)
 	}
 }
 
