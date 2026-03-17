@@ -1,7 +1,7 @@
 ---
 title: "Write tests and add Go package README"
 id: "01kkx436c"
-status: pending
+status: completed
 priority: medium
 type: chore
 tags: ["go"]
@@ -18,9 +18,9 @@ Ensure comprehensive test coverage and add a package-level README for the Go lib
 
 ## Tasks
 
-- [ ] Add integration-style tests using `CommandBuilder` with mock subprocess
-- [ ] Add table-driven tests for CLI argument building from all option combinations
-- [ ] Add parser tests with a real session fixture (JSONL file from a `claude -p --output-format stream-json` invocation)
-- [ ] Ensure `go test ./...` passes with no race conditions (`-race`)
-- [ ] Add `go/README.md` with installation, quick start, and API overview
-- [ ] Add usage examples in README (basic run, streaming, session resume)
+- [x] Add integration-style tests using `CommandBuilder` with mock subprocess
+- [x] Add table-driven tests for CLI argument building from all option combinations
+- [x] Add parser tests with a real session fixture (JSONL file from a `claude -p --output-format stream-json` invocation)
+- [x] Ensure `go test ./...` passes with no race conditions (`-race`)
+- [x] Add `go/README.md` with installation, quick start, and API overview
+- [x] Add usage examples in README (basic run, streaming, session resume)
