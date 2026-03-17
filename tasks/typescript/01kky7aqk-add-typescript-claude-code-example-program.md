@@ -1,7 +1,7 @@
 ---
 title: "Add TypeScript Claude Code example program"
 id: "01kky7aqk"
-status: pending
+status: completed
 priority: medium
 type: feature
 tags: ["typescript", "claudecode", "example"]
@@ -17,9 +17,9 @@ Add a working example program that demonstrates how to use the TypeScript Claude
 
 ## Tasks
 
-- [ ] Create `examples/ts/claudecode/main.ts` with a working example
-- [ ] Include `run` and `runStream` usage with async/await and async iterators
-- [ ] Add a `package.json` and `tsconfig.json` for the example
+- [x] Create `examples/ts/claudecode/main.ts` with a working example
+- [x] Include `run` and `runStream` usage with async/await and async iterators
+- [x] Add a `package.json` and `tsconfig.json` for the example
 
 ## Acceptance Criteria
 
