@@ -29,6 +29,111 @@ Replace the current `Run`/`RunStream` dual-function API with a unified **Session
 - **`Run(prompt, opts)`** — start a session, drain messages internally, return result.
 - **`RunStream(prompt, opts)`** — start a session, return messages iterable (result accessible via session).
 
+### TypeScript reference API
+
+The Runner gains a `start()` primitive; `run` and `runStream` delegate to it:
+
+```typescript
+interface Session {
+  messages: AsyncIterable<Message>;
+  result: Promise<Result>;
+  abort(): void;
+  send(input: unknown): void; // reserved — throws "not yet supported"
+}
+
+interface Runner {
+  start(prompt: string, options?: RunOptions): Session;
+  run(prompt: string, options?: RunOptions): Promise<Result>;
+  runStream(prompt: string, options?: RunOptions): AsyncIterable<Message>;
+}
+```
+
+Usage:
+
+```typescript
+const claude = createClaudeRunner();
+
+// simple run (unchanged)
+const result = await claude.run("explain this repo");
+
+// streaming (unchanged)
+for await (const msg of claude.runStream("refactor auth")) { ... }
+
+// session: full control
+const session = claude.start("fix the tests", { model: "opus" });
+for await (const msg of session.messages) { console.log(msg.type); }
+const result = await session.result;
+
+// session: abort mid-stream
+const session = claude.start("long task");
+for await (const msg of session.messages) {
+  if (tooExpensive(msg)) { session.abort(); break; }
+}
+```
+
+### Go reference API
+
+```go
+type Session struct {
+    Messages <-chan Message
+}
+
+func (s *Session) Result() (Result, error)  // blocks until done
+func (s *Session) Abort()                   // cancels context + kills process
+func (s *Session) Send(input any) error     // returns ErrNotSupported
+
+type Runner struct { /* config, binary, logger */ }
+
+func (r *Runner) Start(ctx context.Context, prompt string, opts ...Option) *Session
+func (r *Runner) Run(ctx context.Context, prompt string, opts ...Option) (Result, error)
+func (r *Runner) RunStream(ctx context.Context, prompt string, opts ...Option) <-chan Message
+```
+
+Usage:
+
+```go
+claude := claudecode.New()
+
+// simple run
+result, err := claude.Run(ctx, "explain this repo")
+
+// streaming
+for msg := range claude.RunStream(ctx, "refactor auth") {
+    fmt.Println(msg.Type)
+}
+
+// session: full control
+session := claude.Start(ctx, "fix the tests", claudecode.WithModel("opus"))
+for msg := range session.Messages {
+    fmt.Println(msg.Type)
+}
+result, err := session.Result()
+
+// session: abort mid-stream
+session := claude.Start(ctx, "long task")
+for msg := range session.Messages {
+    if tooExpensive(msg) {
+        session.Abort()
+        break
+    }
+}
+
+// future (not yet): send mid-turn (e.g. permission responses)
+session := claude.Start(ctx, "delete unused test files")
+for msg := range session.Messages {
+    if msg.Type == "permission_request" {
+        var req PermissionRequest
+        json.Unmarshal(msg.Raw, &req)
+        allowed := reviewPermission(req.Tool, req.Args)
+        session.Send(PermissionResponse{
+            RequestID: req.RequestID,
+            Allow:     allowed,
+        })
+    }
+}
+result, err := session.Result()
+```
+
 ## Tasks
 
 - [ ] Define the `Session` type/interface for each language with: messages, result, abort, and a placeholder/reserved `send` method signature
