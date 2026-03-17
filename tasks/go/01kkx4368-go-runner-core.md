@@ -1,7 +1,7 @@
 ---
 title: "Implement Claude Code core runner (process spawning and result collection)"
 id: "01kkx4368"
-status: in-progress
+status: completed
 priority: high
 type: feature
 tags: ["go"]
