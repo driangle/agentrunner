@@ -8,6 +8,10 @@ type StreamMessage struct {
 	Type    string `json:"type"`
 	Subtype string `json:"subtype,omitempty"`
 
+	// Content holds content blocks lifted from the assistant message wrapper.
+	// Populated by Parse for assistant-type messages.
+	Content []ContentBlock `json:"-"`
+
 	// AssistantMsg holds the nested "message" object in assistant-type lines.
 	AssistantMsg *AssistantMessage `json:"message,omitempty"`
 
@@ -28,8 +32,9 @@ type StreamMessage struct {
 	RateLimitInfo *RateLimitInfo `json:"rate_limit_info,omitempty"`
 
 	// StreamEvent fields — present when Type == "stream_event".
-	EventRaw        json.RawMessage `json:"event,omitempty"`
-	ParentToolUseID string          `json:"parent_tool_use_id,omitempty"`
+	EventRaw        json.RawMessage  `json:"event,omitempty"`
+	ParentToolUseID string           `json:"parent_tool_use_id,omitempty"`
+	Event           *StreamEventInner `json:"-"` // parsed from EventRaw by Parse
 }
 
 // AssistantMessage is the nested "message" object inside assistant-type stream lines.

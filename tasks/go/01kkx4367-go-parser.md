@@ -1,7 +1,7 @@
 ---
 title: "Implement Claude Code stream-json parser"
 id: "01kkx4367"
-status: pending
+status: completed
 priority: high
 type: feature
 tags: ["go"]
@@ -18,12 +18,12 @@ Implement a parser that reads newline-delimited JSON from the CLI's `stream-json
 
 ## Tasks
 
-- [ ] Implement `Parse(line string) (Message, error)` — single line to typed message
-- [ ] Handle assistant message content lifting (content blocks from nested `message` wrapper)
-- [ ] Handle stream_event inner event parsing
-- [ ] Silently skip unknown message types for forward compatibility
-- [ ] Add table-driven tests for each message type (system/init, assistant/text, assistant/thinking, assistant/tool_use, result/success, result/error, stream_event/*, rate_limit_event)
-- [ ] Add test with real session fixture (JSONL file) if available
+- [x] Implement `Parse(line string) (Message, error)` — single line to typed message
+- [x] Handle assistant message content lifting (content blocks from nested `message` wrapper)
+- [x] Handle stream_event inner event parsing
+- [x] Silently skip unknown message types for forward compatibility
+- [x] Add table-driven tests for each message type (system/init, assistant/text, assistant/thinking, assistant/tool_use, result/success, result/error, stream_event/*, rate_limit_event)
+- [x] Add test with real session fixture (JSONL file) if available
 
 ## Acceptance Criteria
 
