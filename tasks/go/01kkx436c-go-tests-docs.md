@@ -1,7 +1,7 @@
 ---
 title: "Write tests and add Go package README"
 id: "01kkx436c"
-status: in-progress
+status: completed
 priority: medium
 type: chore
 tags: ["go"]
