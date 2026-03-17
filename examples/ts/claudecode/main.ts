@@ -94,10 +94,17 @@ async function exampleStreaming(runner: Runner, verbose: boolean) {
         break;
       }
       case "assistant": {
+        // With --include-partial-messages, the CLI emits two kinds of
+        // messages mapped to "assistant":
+        //   1. stream_event with content_block_delta — real-time text deltas
+        //   2. assistant — full accumulated message (arrives at the end)
+        // Print deltas for real-time streaming; skip the final assistant
+        // message to avoid duplicating the output.
         const parsed = parse(msg.raw);
-        for (const block of parsed.content) {
-          if (block.type === "text" && block.text) {
-            process.stdout.write(block.text);
+        if (parsed.type === "stream_event") {
+          const delta = parsed.event?.delta;
+          if (delta?.type === "text_delta" && delta.text) {
+            process.stdout.write(delta.text);
           }
         }
         break;

@@ -118,14 +118,19 @@ func exampleStreaming(ctx context.Context, runner *claudecode.Runner, verbose bo
 				model = parsed.Model
 			}
 		case agentrunner.MessageTypeAssistant:
+			// With --include-partial-messages, the CLI emits two kinds of
+			// messages mapped to "assistant":
+			//   1. stream_event with content_block_delta — real-time text deltas
+			//   2. assistant — full accumulated message (arrives at the end)
+			// Print deltas for real-time streaming; skip the final assistant
+			// message to avoid duplicating the output.
 			parsed, parseErr := claudecode.Parse(string(msg.Raw))
 			if parseErr != nil {
 				continue
 			}
-			for _, block := range parsed.Content {
-				if block.Type == "text" && block.Text != "" {
-					fmt.Print(block.Text)
-				}
+			if parsed.Type == "stream_event" && parsed.Event != nil &&
+				parsed.Event.Delta != nil && parsed.Event.Delta.Type == "text_delta" {
+				fmt.Print(parsed.Event.Delta.Text)
 			}
 		case agentrunner.MessageTypeResult:
 			parsed, parseErr := claudecode.Parse(string(msg.Raw))
