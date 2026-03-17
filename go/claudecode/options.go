@@ -58,6 +58,14 @@ func WithContinue(cont bool) agentrunner.Option {
 	}
 }
 
+// WithSessionID sets a specific session ID for the conversation.
+func WithSessionID(id string) agentrunner.Option {
+	return func(o *agentrunner.Options) {
+		opts := getClaudeOpts(o)
+		opts.SessionID = id
+	}
+}
+
 // ClaudeOptions holds Claude Code-specific configuration that extends
 // the common Options.
 type ClaudeOptions struct {
@@ -81,6 +89,9 @@ type ClaudeOptions struct {
 
 	// Continue indicates whether to continue the most recent session.
 	Continue bool
+
+	// SessionID sets a specific session ID for the conversation.
+	SessionID string
 }
 
 // OnMessageFunc is a callback invoked for each streaming message.
