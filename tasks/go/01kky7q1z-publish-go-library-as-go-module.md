@@ -1,7 +1,7 @@
 ---
 title: "Publish Go library as Go module"
 id: "01kky7q1z"
-status: in-progress
+status: completed
 priority: low
 type: chore
 tags: ["release", "gomod"]
