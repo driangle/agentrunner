@@ -1,14 +1,14 @@
 ---
 title: "Create Python agentrunner library"
 id: "01kkx3f67"
-status: pending
+status: in-progress
 priority: high
 type: feature
 tags: ["python"]
 created: "2026-03-17"
 phase: python
 effort: large
-dependencies: ["01kkx3f5h"]
+dependencies: ["01kkx7v5m"]
 ---
 
 # Create Python CLI runner library

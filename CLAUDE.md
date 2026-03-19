@@ -139,3 +139,90 @@ Three prior implementations exist as reference (none are perfect):
 3. **modpol** (`/Users/driangle/workplace/gg/modpol/modpol-1/apps/cli/internal/claude/`)
    - Strengths: sentinel errors, `CommandBuilder` for testability, `ReadStreamResult` helper, progress hooks
    - Weaknesses: limited event type coverage, app-specific concerns mixed in
+
+# Coding Principles
+
+This document defines the core principles and preferences for code written in this environment.
+
+---
+
+## File Organization
+
+**Give each file one clear responsibility.**
+Files that mix concerns become harder to reason about and riskier to modify.
+
+**Split by concept, not size.**
+Extract cohesive modules (features, behaviors, domains), not arbitrary chunks.
+
+**Optimize for readability.**
+A file should be scannable in a minute or two. If you're constantly scrolling, it's too big.
+
+**Prefer composition over growth.**
+Add new functionality with new modules instead of piling onto existing ones.
+
+**Keep boundaries explicit.**
+Small public interfaces and hidden internals reduce coupling and make changes safer.
+
+**Group by feature, not "utils."**
+Related code together, unrelated code apart improves discoverability.
+
+**Refactor early and often.**
+Split files when they start feeling heavy—before they become "god files."
+
+---
+
+## Core Design Principles
+
+### 1. Clarity over cleverness
+Code is read far more than written. Favor straightforward solutions, obvious naming, and simple control flow. If something needs a comment to explain "how it works," it's probably too complex.
+
+### 2. Keep it simple (KISS)
+Start with the simplest design that solves today's problem. Extra abstractions, layers, or patterns "just in case" usually become liabilities.
+
+### 3. Design for change
+Requirements evolve. Structure code so changes are localized:
+- Small modules
+- Clear boundaries
+- Minimal coupling
+
+Aim to modify one place, not five.
+
+### 4. Single responsibility
+Each module/class/function should do one thing well. Mixed responsibilities create ripple effects and fragile code.
+
+### 5. Prefer composition over inheritance
+Compose behavior from small pieces instead of deep hierarchies. It's easier to extend, test, and reason about.
+
+### 6. Explicit interfaces and contracts
+Make inputs, outputs, and assumptions clear. Avoid hidden side effects. Strong typing, validation, and documented invariants reduce bugs dramatically.
+
+### 7. Test what matters
+Test behavior, not implementation. Focus on:
+- Critical paths
+- Edge cases
+- Regressions
+
+A few meaningful tests beat many brittle ones.
+
+### 8. Automate everything repeatable
+Builds, tests, linting, formatting, deployments. Manual steps create inconsistency and slow teams down.
+
+### 9. Measure before optimizing
+Premature optimization adds complexity. Profile first, then fix the real bottlenecks.
+
+### 10. Leave the codebase better than you found it
+Small, continuous improvements (naming, refactoring, cleanup) compound into long-term maintainability.
+
+---
+
+## Implementation Guidelines
+
+When writing or modifying code:
+- Start with the simplest solution
+- Keep functions small and focused
+- Use clear, descriptive names
+- Avoid premature abstractions
+- Make dependencies explicit
+- Validate at system boundaries only
+- Don't add "just in case" code
+- Refactor when things feel heavy, not after they're unwieldy

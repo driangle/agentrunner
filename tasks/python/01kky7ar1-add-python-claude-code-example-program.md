@@ -1,7 +1,7 @@
 ---
 title: "Add Python Claude Code example program"
 id: "01kky7ar1"
-status: pending
+status: completed
 priority: medium
 type: feature
 tags: ["python", "claudecode", "example"]
@@ -17,9 +17,9 @@ Add a working example program that demonstrates how to use the Python Claude Cod
 
 ## Tasks
 
-- [ ] Create `examples/python/claudecode/main.py` with a working example
-- [ ] Include `run` and `run_stream` usage with asyncio
-- [ ] Add a `pyproject.toml` for the example
+- [x] Create `examples/python/claudecode/main.py` with a working example
+- [x] Include `run` and `run_stream` usage with asyncio
+- [x] Add a `pyproject.toml` for the example
 
 ## Acceptance Criteria
 

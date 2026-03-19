@@ -1,7 +1,7 @@
-.PHONY: check check-go test-go lint-go build-go check-ts build-ts lint-ts test-ts
+.PHONY: check check-go test-go lint-go build-go check-ts build-ts lint-ts test-ts check-python build-python lint-python test-python
 
 # Top-level target: check all libraries.
-check: check-go check-ts
+check: check-go check-ts check-python
 
 # --- Go ---
 
@@ -28,3 +28,16 @@ lint-ts:
 
 test-ts:
 	cd ts && npm test
+
+# --- Python ---
+
+check-python: build-python lint-python test-python
+
+build-python:
+	cd python && pip install -e ".[dev]" --quiet
+
+lint-python:
+	cd python && ruff check src/ tests/
+
+test-python:
+	cd python && python -m pytest
