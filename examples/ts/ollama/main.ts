@@ -7,7 +7,7 @@
 //   - A model pulled: ollama pull llama3.2
 //
 // Run:
-//   npx tsx main.ts
+//   npx tsx main.ts --model llama3.2
 //   npx tsx main.ts --model codellama --base-url http://localhost:11434
 
 import { parseArgs } from "node:util";
@@ -18,13 +18,17 @@ import type { Runner } from "agentrunner";
 
 const { values } = parseArgs({
   options: {
-    model: { type: "string", default: "llama3.2" },
+    model: { type: "string" },
     "base-url": { type: "string", default: "http://localhost:11434" },
     verbose: { type: "boolean", default: false },
   },
 });
 
-const model = values.model!;
+if (!values.model) {
+  console.error("error: --model is required (e.g. --model llama3.2)");
+  process.exit(1);
+}
+const model: string = values.model;
 
 const logger = values.verbose
   ? {
