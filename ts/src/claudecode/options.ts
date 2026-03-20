@@ -29,6 +29,9 @@ export interface ClaudeRunnerConfig {
 
 /** Claude Code-specific options that extend the common RunOptions. */
 export interface ClaudeRunOptions extends RunOptions {
+  /** Bypass interactive permission prompts. */
+  skipPermissions?: boolean;
+
   /** Tools the agent may use. */
   allowedTools?: string[];
 

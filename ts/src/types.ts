@@ -39,11 +39,11 @@ export interface Usage {
   /** Number of completion/output tokens generated. */
   outputTokens: number;
 
-  /** Number of tokens written to cache. */
-  cacheCreationInputTokens: number;
+  /** Number of tokens written to cache (Claude only). */
+  cacheCreationInputTokens?: number;
 
-  /** Number of tokens read from cache. */
-  cacheReadInputTokens: number;
+  /** Number of tokens read from cache (Claude only). */
+  cacheReadInputTokens?: number;
 }
 
 /** Final output from a runner invocation. */
@@ -95,9 +95,6 @@ export interface RunOptions {
 
   /** AbortSignal for cancellation. */
   signal?: AbortSignal;
-
-  /** Bypass interactive permission prompts. */
-  skipPermissions?: boolean;
 }
 
 /** Session encapsulates a running agent process. */

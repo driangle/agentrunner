@@ -154,8 +154,6 @@ function start(
       const usage: Usage = {
         inputTokens: finalResp.prompt_eval_count ?? 0,
         outputTokens: finalResp.eval_count ?? 0,
-        cacheCreationInputTokens: 0,
-        cacheReadInputTokens: 0,
       };
 
       resolveResult!({
