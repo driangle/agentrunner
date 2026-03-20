@@ -1,7 +1,7 @@
 ---
 title: "Add Python Ollama example program"
 id: "01kky7ard"
-status: pending
+status: completed
 priority: medium
 type: feature
 tags: ["python", "ollama", "example"]
