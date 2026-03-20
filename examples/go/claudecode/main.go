@@ -119,7 +119,7 @@ func exampleStreaming(ctx context.Context, runner *claudecode.Runner, verbose bo
 			if verbose {
 				fmt.Printf("[system] %s\n", msg.Raw)
 			}
-			parsed, parseErr := claudecode.Parse(string(msg.Raw))
+			parsed, parseErr := claudecode.Parse(msg.Raw)
 			if parseErr == nil && parsed.Model != "" {
 				model = parsed.Model
 			}
@@ -130,7 +130,7 @@ func exampleStreaming(ctx context.Context, runner *claudecode.Runner, verbose bo
 			//   2. assistant — full accumulated message (arrives at the end)
 			// Print deltas for real-time streaming; skip the final assistant
 			// message to avoid duplicating the output.
-			parsed, parseErr := claudecode.Parse(string(msg.Raw))
+			parsed, parseErr := claudecode.Parse(msg.Raw)
 			if parseErr != nil {
 				continue
 			}
@@ -139,7 +139,7 @@ func exampleStreaming(ctx context.Context, runner *claudecode.Runner, verbose bo
 				fmt.Print(parsed.Event.Delta.Text)
 			}
 		case agentrunner.MessageTypeResult:
-			parsed, parseErr := claudecode.Parse(string(msg.Raw))
+			parsed, parseErr := claudecode.Parse(msg.Raw)
 			if parseErr != nil {
 				continue
 			}
@@ -148,7 +148,7 @@ func exampleStreaming(ctx context.Context, runner *claudecode.Runner, verbose bo
 			}
 			fmt.Println("\n---")
 			fmt.Printf("Cost:     $%.4f\n", parsed.TotalCostUSD)
-			fmt.Printf("Duration: %.0fms\n", parsed.DurationMs)
+			fmt.Printf("Duration: %dms\n", parsed.DurationMs)
 			fmt.Printf("Turns:    %d\n", parsed.NumTurns)
 			fmt.Printf("Model:    %s\n", model)
 			fmt.Printf("Session:  %s\n", parsed.SessionID)

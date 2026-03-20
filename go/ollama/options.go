@@ -131,7 +131,9 @@ func GetOnMessage(o *agentrunner.Options) OnMessageFunc {
 		return nil
 	}
 	if v, ok := o.Extra[onMessageKey{}]; ok {
-		return v.(OnMessageFunc)
+		if fn, ok := v.(OnMessageFunc); ok {
+			return fn
+		}
 	}
 	return nil
 }

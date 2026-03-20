@@ -114,7 +114,7 @@ func TestParse(t *testing.T) {
 					t.Errorf("total_cost_usd = %f, want 0.05", msg.TotalCostUSD)
 				}
 				if msg.DurationMs != 1234 {
-					t.Errorf("duration_ms = %f, want 1234", msg.DurationMs)
+					t.Errorf("duration_ms = %d, want 1234", msg.DurationMs)
 				}
 				if msg.NumTurns != 3 {
 					t.Errorf("num_turns = %d, want 3", msg.NumTurns)
@@ -270,7 +270,7 @@ func TestParse(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			msg, err := Parse(tt.input)
+			msg, err := Parse([]byte(tt.input))
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("Parse() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -301,7 +301,7 @@ func TestParseSessionFixture(t *testing.T) {
 			continue
 		}
 
-		msg, err := Parse(line)
+		msg, err := Parse([]byte(line))
 		if err != nil {
 			t.Errorf("line %d: Parse error: %v", lineNum, err)
 			continue

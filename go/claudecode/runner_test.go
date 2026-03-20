@@ -2,6 +2,7 @@ package claudecode
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -135,8 +136,8 @@ func TestRunNonZeroExit(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error")
 	}
-	if !strings.Contains(err.Error(), agentrunner.ErrNonZeroExit.Error()) {
-		t.Errorf("err = %v, want to contain ErrNonZeroExit", err)
+	if !errors.Is(err, agentrunner.ErrNonZeroExit) {
+		t.Errorf("err = %v, want ErrNonZeroExit", err)
 	}
 	if !strings.Contains(err.Error(), "fatal error from claude") {
 		t.Errorf("err = %v, want to contain stderr output", err)
@@ -190,8 +191,8 @@ func TestRunNotFound(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error")
 	}
-	if !strings.Contains(err.Error(), agentrunner.ErrNotFound.Error()) {
-		t.Errorf("err = %v, want to contain ErrNotFound", err)
+	if !errors.Is(err, agentrunner.ErrNotFound) {
+		t.Errorf("err = %v, want ErrNotFound", err)
 	}
 }
 
@@ -199,9 +200,9 @@ func TestRunNotFound(t *testing.T) {
 
 func TestBuildArgsMinimal(t *testing.T) {
 	opts := &agentrunner.Options{}
-	args := buildArgs("hello world", opts)
+	args := buildArgs("hello world", opts, false)
 
-	expected := []string{"--print", "--output-format", "stream-json", "--verbose", "--", "hello world"}
+	expected := []string{"--print", "--output-format", "stream-json", "--", "hello world"}
 	if len(args) != len(expected) {
 		t.Fatalf("args = %v, want %v", args, expected)
 	}
@@ -220,9 +221,10 @@ func TestBuildArgsAllCommonOptions(t *testing.T) {
 		MaxTurns:           5,
 		SkipPermissions:    true,
 	}
-	args := buildArgs("test prompt", opts)
+	args := buildArgs("test prompt", opts, true)
 
 	mustContain := []string{
+		"--verbose",
 		"--model", "claude-sonnet-4-6",
 		"--system-prompt", "You are helpful",
 		"--append-system-prompt", "Be concise",
@@ -245,7 +247,6 @@ func TestBuildArgsAllCommonOptions(t *testing.T) {
 func TestBuildArgsClaudeOptions(t *testing.T) {
 	opts := &agentrunner.Options{}
 	// Apply Claude-specific options.
-	WithAllowedTools("Read", "Write")(&agentrunner.Options{})
 	WithAllowedTools("Read", "Write")(opts)
 	WithDisallowedTools("Bash")(opts)
 	WithMCPConfig("/tmp/mcp.json")(opts)
@@ -253,7 +254,7 @@ func TestBuildArgsClaudeOptions(t *testing.T) {
 	WithMaxBudgetUSD(1.5)(opts)
 	WithResume("sess-123")(opts)
 
-	args := buildArgs("test", opts)
+	args := buildArgs("test", opts, false)
 	joined := strings.Join(args, " ")
 
 	mustContain := []string{
@@ -275,7 +276,7 @@ func TestBuildArgsClaudeOptions(t *testing.T) {
 func TestBuildArgsSessionID(t *testing.T) {
 	opts := &agentrunner.Options{}
 	WithSessionID("my-session-42")(opts)
-	args := buildArgs("test", opts)
+	args := buildArgs("test", opts, false)
 
 	joined := strings.Join(args, " ")
 	if !strings.Contains(joined, "--session-id my-session-42") {
@@ -286,7 +287,7 @@ func TestBuildArgsSessionID(t *testing.T) {
 func TestBuildArgsContinue(t *testing.T) {
 	opts := &agentrunner.Options{}
 	WithContinue(true)(opts)
-	args := buildArgs("test", opts)
+	args := buildArgs("test", opts, false)
 
 	found := false
 	for _, a := range args {
@@ -302,7 +303,7 @@ func TestBuildArgsContinue(t *testing.T) {
 func TestBuildArgsIncludePartialMessages(t *testing.T) {
 	opts := &agentrunner.Options{}
 	WithIncludePartialMessages(true)(opts)
-	args := buildArgs("test", opts)
+	args := buildArgs("test", opts, false)
 
 	found := false
 	for _, a := range args {
@@ -448,8 +449,8 @@ func TestRunStreamNonZeroExit(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error")
 	}
-	if !strings.Contains(err.Error(), agentrunner.ErrNonZeroExit.Error()) {
-		t.Errorf("err = %v, want to contain ErrNonZeroExit", err)
+	if !errors.Is(err, agentrunner.ErrNonZeroExit) {
+		t.Errorf("err = %v, want ErrNonZeroExit", err)
 	}
 }
 
@@ -465,8 +466,8 @@ func TestRunStreamNotFound(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error")
 	}
-	if !strings.Contains(err.Error(), agentrunner.ErrNotFound.Error()) {
-		t.Errorf("err = %v, want to contain ErrNotFound", err)
+	if !errors.Is(err, agentrunner.ErrNotFound) {
+		t.Errorf("err = %v, want ErrNotFound", err)
 	}
 }
 
@@ -634,7 +635,7 @@ func TestStartNotFound(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error")
 	}
-	if !strings.Contains(err.Error(), agentrunner.ErrNotFound.Error()) {
-		t.Errorf("err = %v, want to contain ErrNotFound", err)
+	if !errors.Is(err, agentrunner.ErrNotFound) {
+		t.Errorf("err = %v, want ErrNotFound", err)
 	}
 }

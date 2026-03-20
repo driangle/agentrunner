@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"runtime"
 	"time"
 )
 
@@ -54,12 +55,18 @@ func (s *Session) Send(_ any) error {
 }
 
 // NewSession creates a Session with the given channels and abort function.
+// The session sets a runtime finalizer so that abandoning a session (not draining
+// messages, not calling Abort) will still terminate the underlying process.
 func NewSession(messages <-chan Message, resultCh chan ResultOrError, abort context.CancelFunc) *Session {
-	return &Session{
+	s := &Session{
 		Messages: messages,
 		resultCh: resultCh,
 		abort:    abort,
 	}
+	runtime.SetFinalizer(s, func(s *Session) {
+		s.Abort()
+	})
+	return s
 }
 
 // Runner executes prompts against an AI coding agent and returns results.
@@ -216,6 +223,33 @@ type Message struct {
 
 	// Raw is the original JSON line for runner-specific parsing.
 	Raw json.RawMessage
+
+	// Parsed is an optional runner-specific typed representation of this message.
+	// Runners populate this field so callers can access structured data without
+	// re-parsing Raw. The concrete type depends on the runner (e.g. *claudecode.StreamMessage).
+	Parsed any
+}
+
+// Text returns the text content from the message, if available.
+// Returns empty string for message types that don't carry text.
+func (m Message) Text() string {
+	if a, ok := m.Parsed.(interface{ Text() string }); ok {
+		return a.Text()
+	}
+	return ""
+}
+
+// Thinking returns reasoning/thinking content from the message, if available.
+func (m Message) Thinking() string {
+	if a, ok := m.Parsed.(interface{ Thinking() string }); ok {
+		return a.Thinking()
+	}
+	return ""
+}
+
+// IsResult reports whether this message is a final result message.
+func (m Message) IsResult() bool {
+	return m.Type == MessageTypeResult
 }
 
 // Sentinel errors for common failure modes.
@@ -237,6 +271,9 @@ var (
 
 	// ErrNoResult indicates the stream ended without a result message.
 	ErrNoResult = errors.New("no result in output")
+
+	// ErrHTTPError indicates an HTTP API returned a non-OK status code.
+	ErrHTTPError = errors.New("HTTP error")
 
 	// ErrNotSupported indicates the operation is not yet supported.
 	ErrNotSupported = errors.New("not yet supported")

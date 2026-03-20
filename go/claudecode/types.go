@@ -19,8 +19,8 @@ type StreamMessage struct {
 	Result        string       `json:"result,omitempty"`
 	IsError       bool         `json:"is_error,omitempty"`
 	TotalCostUSD  float64      `json:"total_cost_usd,omitempty"`
-	DurationMs    float64      `json:"duration_ms,omitempty"`
-	DurationAPIMs float64      `json:"duration_api_ms,omitempty"`
+	DurationMs    int64        `json:"duration_ms,omitempty"`
+	DurationAPIMs int64        `json:"duration_api_ms,omitempty"`
 	NumTurns      int          `json:"num_turns,omitempty"`
 	SessionID     string       `json:"session_id,omitempty"`
 	Model         string       `json:"model,omitempty"`
@@ -36,6 +36,35 @@ type StreamMessage struct {
 	EventRaw        json.RawMessage  `json:"event,omitempty"`
 	ParentToolUseID string           `json:"parent_tool_use_id,omitempty"`
 	Event           *StreamEventInner `json:"-"` // parsed from EventRaw by Parse
+}
+
+// Text returns the concatenated text content from this message's content blocks.
+func (m *StreamMessage) Text() string {
+	for _, b := range m.Content {
+		if b.Type == "text" {
+			return b.Text
+		}
+	}
+	if m.Result != "" {
+		return m.Result
+	}
+	if m.Event != nil && m.Event.Delta != nil {
+		return m.Event.Delta.Text
+	}
+	return ""
+}
+
+// Thinking returns the concatenated thinking content from this message's content blocks.
+func (m *StreamMessage) Thinking() string {
+	for _, b := range m.Content {
+		if b.Type == "thinking" {
+			return b.Thinking
+		}
+	}
+	if m.Event != nil && m.Event.Delta != nil {
+		return m.Event.Delta.Thinking
+	}
+	return ""
 }
 
 // AssistantMessage is the nested "message" object inside assistant-type stream lines.

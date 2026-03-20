@@ -1,3 +1,7 @@
+// Package ollama provides a Runner implementation for invoking Ollama models
+// via the Ollama HTTP API. It implements the common Runner interface using
+// POST /api/chat with streaming ndjson responses, enabling fully local/offline
+// agent execution with locally-hosted models.
 package ollama
 
 import (
@@ -14,6 +18,9 @@ import (
 
 	agentrunner "github.com/driangle/agent-runner/go"
 )
+
+// Compile-time interface assertion.
+var _ agentrunner.Runner = (*Runner)(nil)
 
 const defaultBaseURL = "http://localhost:11434"
 
@@ -64,10 +71,9 @@ func (r *Runner) Start(ctx context.Context, prompt string, opts ...agentrunner.O
 		o(&options)
 	}
 
+	var timeoutCancel context.CancelFunc
 	if options.Timeout > 0 {
-		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, options.Timeout)
-		_ = cancel
+		ctx, timeoutCancel = context.WithTimeout(ctx, options.Timeout)
 	}
 
 	ctx, sessionCancel := context.WithCancel(ctx)
@@ -79,6 +85,9 @@ func (r *Runner) Start(ctx context.Context, prompt string, opts ...agentrunner.O
 		defer close(msgCh)
 		defer close(resultCh)
 		defer sessionCancel()
+		if timeoutCancel != nil {
+			defer timeoutCancel()
+		}
 
 		req, err := r.buildRequest(ctx, prompt, &options)
 		if err != nil {
@@ -294,7 +303,7 @@ func mapStatusError(code int) error {
 	if code == http.StatusNotFound {
 		return fmt.Errorf("%w: model not found (HTTP 404)", agentrunner.ErrNotFound)
 	}
-	return fmt.Errorf("%w: HTTP %d", agentrunner.ErrNonZeroExit, code)
+	return fmt.Errorf("%w: HTTP %d", agentrunner.ErrHTTPError, code)
 }
 
 func mapContextError(err error) error {

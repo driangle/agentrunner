@@ -1,3 +1,6 @@
+// Package claudecode provides a Runner implementation for invoking Claude Code CLI
+// programmatically. It implements the common Runner interface using claude -p with
+// stream-json output format.
 package claudecode
 
 import (
@@ -10,9 +13,16 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
+	"sync"
 
 	agentrunner "github.com/driangle/agent-runner/go"
 )
+
+// Compile-time interface assertion.
+var _ agentrunner.Runner = (*Runner)(nil)
+
+// MinCLIVersion is the minimum supported Claude Code CLI version.
+const MinCLIVersion = "1.0.12"
 
 // CommandBuilder creates an *exec.Cmd for the given binary and arguments.
 // Inject a custom builder in tests to avoid spawning a real CLI process.
@@ -39,9 +49,11 @@ func WithLogger(l *slog.Logger) RunnerOption {
 
 // Runner implements agentrunner.Runner for Claude Code CLI.
 type Runner struct {
-	binary     string
-	cmdBuilder CommandBuilder
-	logger     *slog.Logger
+	binary       string
+	cmdBuilder   CommandBuilder
+	logger       *slog.Logger
+	versionOnce  sync.Once
+	versionError error
 }
 
 // NewRunner creates a Runner with the given options.
@@ -53,6 +65,55 @@ func NewRunner(opts ...RunnerOption) *Runner {
 	return r
 }
 
+// checkVersion verifies the CLI version is within the supported range.
+// It runs once per Runner instance and caches the result.
+func (r *Runner) checkVersion() error {
+	// Skip version check when using a custom command builder (tests).
+	if r.cmdBuilder != nil {
+		return nil
+	}
+	r.versionOnce.Do(func() {
+		out, err := exec.Command(r.binary, "--version").Output()
+		if err != nil {
+			// Don't fail hard — the binary may not be found, which Start handles.
+			return
+		}
+		version := strings.TrimSpace(string(out))
+		if !isVersionAtLeast(version, MinCLIVersion) {
+			r.versionError = fmt.Errorf("%w: claude CLI version %s is below minimum %s", agentrunner.ErrNotFound, version, MinCLIVersion)
+		}
+	})
+	return r.versionError
+}
+
+// isVersionAtLeast returns true if version >= minVersion using simple
+// numeric comparison of dot-separated components (e.g., "1.0.12" >= "1.0.12").
+func isVersionAtLeast(version, minVersion string) bool {
+	parse := func(v string) []int {
+		var parts []int
+		for _, s := range strings.Split(v, ".") {
+			n, _ := strconv.Atoi(s)
+			parts = append(parts, n)
+		}
+		return parts
+	}
+	v := parse(version)
+	min := parse(minVersion)
+	for i := 0; i < len(min); i++ {
+		vi := 0
+		if i < len(v) {
+			vi = v[i]
+		}
+		if vi < min[i] {
+			return false
+		}
+		if vi > min[i] {
+			return true
+		}
+	}
+	return true
+}
+
 // Start launches a Claude Code CLI process and returns a Session for full
 // control over the lifecycle. Messages arrive on session.Messages; the final
 // result is available via session.Result().
@@ -62,11 +123,9 @@ func (r *Runner) Start(ctx context.Context, prompt string, opts ...agentrunner.O
 		o(&options)
 	}
 
+	var timeoutCancel context.CancelFunc
 	if options.Timeout > 0 {
-		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, options.Timeout)
-		// cancel is deferred inside the goroutine
-		_ = cancel
+		ctx, timeoutCancel = context.WithTimeout(ctx, options.Timeout)
 	}
 
 	ctx, sessionCancel := context.WithCancel(ctx)
@@ -78,8 +137,16 @@ func (r *Runner) Start(ctx context.Context, prompt string, opts ...agentrunner.O
 		defer close(msgCh)
 		defer close(resultCh)
 		defer sessionCancel()
+		if timeoutCancel != nil {
+			defer timeoutCancel()
+		}
 
-		args := buildArgs(prompt, &options)
+		if err := r.checkVersion(); err != nil {
+			resultCh <- agentrunner.ResultOrError{Err: err}
+			return
+		}
+
+		args := buildArgs(prompt, &options, r.logger != nil)
 
 		cmdBuilder := r.cmdBuilder
 		if cmdBuilder == nil {
@@ -130,13 +197,17 @@ func (r *Runner) Start(ctx context.Context, prompt string, opts ...agentrunner.O
 		var stdoutErrors []string
 
 		for scanner.Scan() {
-			line := scanner.Text()
-			if line == "" {
+			line := scanner.Bytes()
+			if len(line) == 0 {
 				continue
 			}
-			parsed, parseErr := Parse(line)
+			// Copy the line since scanner reuses the buffer.
+			lineCopy := make([]byte, len(line))
+			copy(lineCopy, line)
+
+			parsed, parseErr := Parse(lineCopy)
 			if parseErr != nil {
-				stdoutErrors = append(stdoutErrors, line)
+				stdoutErrors = append(stdoutErrors, string(lineCopy))
 				continue
 			}
 
@@ -147,9 +218,11 @@ func (r *Runner) Start(ctx context.Context, prompt string, opts ...agentrunner.O
 				resultMsg = &parsed
 			}
 
+			parsedCopy := parsed
 			msg := agentrunner.Message{
-				Type: mapMessageType(parsed.Type),
-				Raw:  []byte(line),
+				Type:   mapMessageType(parsed.Type),
+				Raw:    lineCopy,
+				Parsed: &parsedCopy,
 			}
 
 			if onMessage != nil {
@@ -169,6 +242,10 @@ func (r *Runner) Start(ctx context.Context, prompt string, opts ...agentrunner.O
 				return
 			}
 		}
+
+		// Check scanner error before cmd.Wait — if the scanner hit an I/O error,
+		// we want to report it rather than masking it as ErrNoResult.
+		scanErr := scanner.Err()
 
 		waitErr := cmd.Wait()
 
@@ -190,6 +267,11 @@ func (r *Runner) Start(ctx context.Context, prompt string, opts ...agentrunner.O
 			return
 		}
 
+		if scanErr != nil {
+			resultCh <- agentrunner.ResultOrError{Err: fmt.Errorf("%w: %v", agentrunner.ErrParseError, scanErr)}
+			return
+		}
+
 		if waitErr != nil {
 			var exitErr *exec.ExitError
 			if errors.As(waitErr, &exitErr) {
@@ -199,11 +281,6 @@ func (r *Runner) Start(ctx context.Context, prompt string, opts ...agentrunner.O
 			} else {
 				resultCh <- agentrunner.ResultOrError{Err: fmt.Errorf("wait: %w", waitErr)}
 			}
-			return
-		}
-
-		if scanErr := scanner.Err(); scanErr != nil {
-			resultCh <- agentrunner.ResultOrError{Err: fmt.Errorf("%w: %v", agentrunner.ErrParseError, scanErr)}
 			return
 		}
 
@@ -267,8 +344,11 @@ func mapMessageType(typ string) agentrunner.MessageType {
 	}
 }
 
-func buildArgs(prompt string, opts *agentrunner.Options) []string {
-	args := []string{"--print", "--output-format", "stream-json", "--verbose"}
+func buildArgs(prompt string, opts *agentrunner.Options, verbose bool) []string {
+	args := []string{"--print", "--output-format", "stream-json"}
+	if verbose {
+		args = append(args, "--verbose")
+	}
 
 	if opts.Model != "" {
 		args = append(args, "--model", opts.Model)
@@ -325,7 +405,7 @@ func mapResult(msg *StreamMessage) *agentrunner.Result {
 		Text:       msg.Result,
 		IsError:    msg.IsError,
 		CostUSD:    msg.TotalCostUSD,
-		DurationMs: int64(msg.DurationMs),
+		DurationMs: msg.DurationMs,
 		SessionID:  msg.SessionID,
 	}
 	if msg.Usage != nil {

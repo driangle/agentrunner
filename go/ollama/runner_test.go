@@ -3,11 +3,11 @@ package ollama
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 	"time"
 
@@ -197,8 +197,8 @@ func TestRunServerError(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error")
 	}
-	if !strings.Contains(err.Error(), "HTTP 500") {
-		t.Errorf("err = %v, want to contain HTTP 500", err)
+	if !errors.Is(err, agentrunner.ErrHTTPError) {
+		t.Errorf("err = %v, want ErrHTTPError", err)
 	}
 }
 
@@ -213,8 +213,8 @@ func TestRunModelNotFound(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error")
 	}
-	if !strings.Contains(err.Error(), agentrunner.ErrNotFound.Error()) {
-		t.Errorf("err = %v, want to contain ErrNotFound", err)
+	if !errors.Is(err, agentrunner.ErrNotFound) {
+		t.Errorf("err = %v, want ErrNotFound", err)
 	}
 }
 
@@ -225,8 +225,8 @@ func TestRunConnectionRefused(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error")
 	}
-	if !strings.Contains(err.Error(), agentrunner.ErrNotFound.Error()) {
-		t.Errorf("err = %v, want to contain ErrNotFound", err)
+	if !errors.Is(err, agentrunner.ErrNotFound) {
+		t.Errorf("err = %v, want ErrNotFound", err)
 	}
 }
 
@@ -282,8 +282,8 @@ func TestRunParseError(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error")
 	}
-	if !strings.Contains(err.Error(), agentrunner.ErrParseError.Error()) {
-		t.Errorf("err = %v, want to contain ErrParseError", err)
+	if !errors.Is(err, agentrunner.ErrParseError) {
+		t.Errorf("err = %v, want ErrParseError", err)
 	}
 }
 
