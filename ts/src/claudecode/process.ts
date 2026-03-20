@@ -23,9 +23,10 @@ export function logCmd(
 }
 
 /** Resolve the spawn function, using the injected one or the default. */
-export function resolveSpawn(
-  config: ClaudeRunnerConfig,
-): { spawn: SpawnFn; binary: string } {
+export function resolveSpawn(config: ClaudeRunnerConfig): {
+  spawn: SpawnFn;
+  binary: string;
+} {
   const binary = config.binary ?? "claude";
 
   if (config.spawn) {

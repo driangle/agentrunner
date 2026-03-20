@@ -140,7 +140,9 @@ describe("run", () => {
       systemPrompt: "You are helpful",
     });
 
-    const body = captured.body as { messages: Array<{ role: string; content: string }> };
+    const body = captured.body as {
+      messages: Array<{ role: string; content: string }>;
+    };
     expect(body.messages).toHaveLength(2);
     expect(body.messages[0].role).toBe("system");
     expect(body.messages[0].content).toBe("You are helpful");
@@ -159,7 +161,9 @@ describe("run", () => {
       appendSystemPrompt: "Be concise",
     });
 
-    const body = captured.body as { messages: Array<{ role: string; content: string }> };
+    const body = captured.body as {
+      messages: Array<{ role: string; content: string }>;
+    };
     expect(body.messages[0].content).toBe("Be helpful\nBe concise");
   });
 
@@ -322,7 +326,9 @@ describe("runStream", () => {
     const runner = createOllamaRunner({ fetch: mockFetch(happyLines) });
     const messages: Message[] = [];
 
-    for await (const msg of runner.runStream("say hello", { model: "llama3" })) {
+    for await (const msg of runner.runStream("say hello", {
+      model: "llama3",
+    })) {
       messages.push(msg);
     }
 

@@ -31,7 +31,4 @@ export type {
 
 export { createOllamaRunner } from "./ollama/runner.js";
 
-export type {
-  OllamaRunnerConfig,
-  OllamaRunOptions,
-} from "./ollama/options.js";
+export type { OllamaRunnerConfig, OllamaRunOptions } from "./ollama/options.js";

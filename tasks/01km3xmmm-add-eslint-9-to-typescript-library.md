@@ -1,7 +1,7 @@
 ---
 title: "Add ESLint 9 to TypeScript library"
 id: "01km3xmmm"
-status: pending
+status: completed
 priority: medium
 type: chore
 tags: ["typescript", "linting"]
@@ -16,14 +16,14 @@ Set up ESLint 9 for the TypeScript library (`ts/`) using the flat config format.
 
 ## Tasks
 
-- [ ] Install `eslint` and `typescript-eslint` as devDependencies in `ts/`
-- [ ] Create `ts/eslint.config.js` using ESLint 9 flat config format
-- [ ] Configure TypeScript-aware linting rules
-- [ ] Add custom rule: `max-lines` set to 200 lines per file
-- [ ] Add `"lint"` script to `ts/package.json`
-- [ ] Ensure the Makefile `lint-ts` target runs ESLint
-- [ ] Fix any existing source files that violate the new rules
-- [ ] Verify `make check` passes with ESLint integrated
+- [x] Install `eslint` and `typescript-eslint` as devDependencies in `ts/`
+- [x] Create `ts/eslint.config.js` using ESLint 9 flat config format
+- [x] Configure TypeScript-aware linting rules
+- [x] Add custom rule: `max-lines` set to 200 lines per file
+- [x] Add `"lint"` script to `ts/package.json`
+- [x] Ensure the Makefile `lint-ts` target runs ESLint
+- [x] Fix any existing source files that violate the new rules
+- [x] Verify `make check` passes with ESLint integrated
 
 ## Acceptance Criteria
 

@@ -5,8 +5,8 @@ TypeScript library for programmatically invoking AI coding agents. Part of the [
 ## Supported CLIs
 
 | Runner      | CLI Version | Status |
-|-------------|-------------|--------|
-| Claude Code | >= 1.0.12   | ✅      |
+| ----------- | ----------- | ------ |
+| Claude Code | >= 1.0.12   | ✅     |
 
 ## Installation
 
@@ -42,11 +42,11 @@ Creates a runner for the Claude Code CLI.
 
 **Config options:**
 
-| Field    | Type       | Default    | Description                          |
-|----------|------------|------------|--------------------------------------|
-| `binary` | `string`   | `"claude"` | CLI binary name or path              |
-| `spawn`  | `SpawnFn`  | —          | Custom spawn function (for testing)  |
-| `logger` | `Logger`   | —          | Logger for debug output (opt-in)     |
+| Field    | Type      | Default    | Description                         |
+| -------- | --------- | ---------- | ----------------------------------- |
+| `binary` | `string`  | `"claude"` | CLI binary name or path             |
+| `spawn`  | `SpawnFn` | —          | Custom spawn function (for testing) |
+| `logger` | `Logger`  | —          | Logger for debug output (opt-in)    |
 
 ### `runner.run(prompt, options?)`
 
@@ -60,22 +60,22 @@ Execute a prompt and stream messages as they arrive. Returns `AsyncIterable<Mess
 
 Common options (all runners):
 
-| Field               | Type                    | Description                          |
-|---------------------|-------------------------|--------------------------------------|
-| `model`             | `string`                | Model name or alias                  |
-| `systemPrompt`      | `string`                | System prompt override               |
-| `appendSystemPrompt`| `string`                | Appended to default system prompt    |
-| `workingDir`        | `string`                | Working directory for subprocess     |
-| `env`               | `Record<string,string>` | Additional environment variables     |
-| `maxTurns`          | `number`                | Maximum agentic turns                |
-| `timeout`           | `number`                | Timeout in milliseconds              |
-| `signal`            | `AbortSignal`           | Cancellation signal                  |
-| `skipPermissions`   | `boolean`               | Skip permission prompts              |
+| Field                | Type                    | Description                       |
+| -------------------- | ----------------------- | --------------------------------- |
+| `model`              | `string`                | Model name or alias               |
+| `systemPrompt`       | `string`                | System prompt override            |
+| `appendSystemPrompt` | `string`                | Appended to default system prompt |
+| `workingDir`         | `string`                | Working directory for subprocess  |
+| `env`                | `Record<string,string>` | Additional environment variables  |
+| `maxTurns`           | `number`                | Maximum agentic turns             |
+| `timeout`            | `number`                | Timeout in milliseconds           |
+| `signal`             | `AbortSignal`           | Cancellation signal               |
+| `skipPermissions`    | `boolean`               | Skip permission prompts           |
 
 Claude-specific options (extend `RunOptions`):
 
 | Field             | Type       | Description                        |
-|-------------------|------------|------------------------------------|
+| ----------------- | ---------- | ---------------------------------- |
 | `allowedTools`    | `string[]` | Tools the agent may use            |
 | `disallowedTools` | `string[]` | Tools the agent may not use        |
 | `mcpConfig`       | `string`   | Path to MCP server config          |
@@ -88,15 +88,15 @@ Claude-specific options (extend `RunOptions`):
 
 ### Result
 
-| Field        | Type     | Description                     |
-|--------------|----------|---------------------------------|
-| `text`       | `string` | Final response text             |
-| `isError`    | `boolean`| Whether the run ended in error  |
-| `exitCode`   | `number` | Process exit code               |
-| `usage`      | `Usage`  | Token counts                    |
-| `costUSD`    | `number` | Estimated cost in USD           |
-| `durationMs` | `number` | Wall-clock duration in ms       |
-| `sessionId`  | `string` | Session ID for resumption       |
+| Field        | Type      | Description                    |
+| ------------ | --------- | ------------------------------ |
+| `text`       | `string`  | Final response text            |
+| `isError`    | `boolean` | Whether the run ended in error |
+| `exitCode`   | `number`  | Process exit code              |
+| `usage`      | `Usage`   | Token counts                   |
+| `costUSD`    | `number`  | Estimated cost in USD          |
+| `durationMs` | `number`  | Wall-clock duration in ms      |
+| `sessionId`  | `string`  | Session ID for resumption      |
 
 ### Error Classes
 

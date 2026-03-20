@@ -51,7 +51,9 @@ export function messageToolInput(msg: ClaudeMessage): unknown | undefined {
 export function messageToolOutput(msg: ClaudeMessage): unknown | undefined {
   if (msg.data.type !== "user") return undefined;
   // User messages contain tool results in the nested message.content.
-  const data = msg.data as StreamMessage & { message?: { content?: Array<{ content?: unknown }> } };
+  const data = msg.data as StreamMessage & {
+    message?: { content?: Array<{ content?: unknown }> };
+  };
   const block = data.message?.content?.[0];
   return block?.content;
 }

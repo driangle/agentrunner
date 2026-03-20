@@ -2,9 +2,10 @@ import { TimeoutError, CancelledError } from "./errors.js";
 import type { RunOptions } from "./types.js";
 
 /** Combine timeout and user-provided signal into a single AbortSignal. */
-export function combinedSignal(
-  options: RunOptions,
-): { signal: AbortSignal; clearTimeout: () => void } {
+export function combinedSignal(options: RunOptions): {
+  signal: AbortSignal;
+  clearTimeout: () => void;
+} {
   const signals: AbortSignal[] = [];
   let timeoutId: ReturnType<typeof setTimeout> | undefined;
 
@@ -42,9 +43,7 @@ export function combinedSignal(
 }
 
 /** Determine the abort error type from the signal's reason. */
-export function abortError(
-  signal: AbortSignal,
-): TimeoutError | CancelledError {
+export function abortError(signal: AbortSignal): TimeoutError | CancelledError {
   if (signal.reason === "timeout") {
     return new TimeoutError("execution timed out");
   }

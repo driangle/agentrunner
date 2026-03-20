@@ -152,9 +152,7 @@ describe("run", () => {
   });
 
   it("no result throws NoResultError", async () => {
-    const lines = [
-      `{"type":"system","subtype":"init","session_id":"sess-x"}`,
-    ];
+    const lines = [`{"type":"system","subtype":"init","session_id":"sess-x"}`];
     const runner = createClaudeRunner({ spawn: mockSpawn(lines) });
     await expect(runner.run("hello")).rejects.toThrow(NoResultError);
   });

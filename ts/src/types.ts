@@ -113,7 +113,10 @@ export interface Session<M extends Message = Message> {
 }
 
 /** Runner executes prompts against an AI coding agent. */
-export interface Runner<O extends RunOptions = RunOptions, M extends Message = Message> {
+export interface Runner<
+  O extends RunOptions = RunOptions,
+  M extends Message = Message,
+> {
   /** Launch an agent process and return a Session for full control. */
   start(prompt: string, options?: O): Session<M>;
 

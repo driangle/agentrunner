@@ -159,10 +159,8 @@ describe("parse session fixture", () => {
     const lines = content.split("\n").filter((l) => l.trim());
 
     const typeCounts: Record<string, number> = {};
-    let lineNum = 0;
 
     for (const line of lines) {
-      lineNum++;
       const msg = parse(line);
       typeCounts[msg.type] = (typeCounts[msg.type] ?? 0) + 1;
 
