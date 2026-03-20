@@ -1,6 +1,6 @@
 """agentrunner — Python library for programmatically invoking AI coding agents."""
 
-from .claudecode import ClaudeRunner, ClaudeRunnerConfig, ClaudeRunOptions, create_claude_runner
+from .claudecode import ClaudeRunner, ClaudeRunOptions
 from .errors import (
     CancelledError,
     NonZeroExitError,
@@ -10,12 +10,11 @@ from .errors import (
     RunnerError,
     TimeoutError,
 )
-from .types import Message, Result, RunOptions, Usage
+from .types import Message, Result, Runner, RunOptions, Session, Usage
 
 __all__ = [
     "CancelledError",
     "ClaudeRunner",
-    "ClaudeRunnerConfig",
     "ClaudeRunOptions",
     "Message",
     "NoResultError",
@@ -24,8 +23,9 @@ __all__ = [
     "ParseError",
     "Result",
     "RunOptions",
+    "Runner",
     "RunnerError",
+    "Session",
     "TimeoutError",
     "Usage",
-    "create_claude_runner",
 ]

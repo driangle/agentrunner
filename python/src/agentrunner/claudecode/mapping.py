@@ -2,21 +2,41 @@
 
 from __future__ import annotations
 
+import json
+
 from ..types import Result, Usage
 from .types import StreamMessage
 
 _TYPE_MAP = {
     "system": "system",
     "assistant": "assistant",
-    "user": "user",
     "result": "result",
-    "stream_event": "assistant",
 }
 
 
-def map_message_type(type_: str) -> str:
-    """Map Claude stream-json type to common MessageType."""
-    return _TYPE_MAP.get(type_, type_)
+def map_message_type(raw_type: str, raw_line: str) -> str:
+    """Map Claude stream-json type to common MessageType.
+
+    Uses the raw JSON line to distinguish tool_use and tool_result subtypes
+    from generic assistant/user messages, matching the INTERFACE.md taxonomy.
+    """
+    if raw_type in _TYPE_MAP:
+        return _TYPE_MAP[raw_type]
+
+    if raw_type == "user":
+        try:
+            d = json.loads(raw_line)
+            for block in d.get("content", []):
+                if isinstance(block, dict) and block.get("type") == "tool_result":
+                    return "tool_result"
+        except (json.JSONDecodeError, TypeError):
+            pass
+        return "user"
+
+    if raw_type == "stream_event":
+        return "assistant"
+
+    return raw_type
 
 
 def map_result(msg: StreamMessage, fallback_session_id: str) -> Result:

@@ -7,13 +7,13 @@ import pytest
 
 from agentrunner import (
     CancelledError,
+    ClaudeRunner,
     Message,
     NonZeroExitError,
     NoResultError,
     TimeoutError,
 )
-from agentrunner.claudecode.options import ClaudeRunnerConfig, ClaudeRunOptions
-from agentrunner.claudecode.runner import create_claude_runner
+from agentrunner.claudecode.options import ClaudeRunOptions
 
 
 class FakeProcess:
@@ -205,7 +205,7 @@ STREAM_MULTI_LINES = [
 
 class TestRun:
     async def test_happy_path(self):
-        runner = create_claude_runner(ClaudeRunnerConfig(spawn=mock_spawn(HAPPY_LINES)))
+        runner = ClaudeRunner(_spawn=mock_spawn(HAPPY_LINES))
         result = await runner.run("say hello")
 
         assert result.text == "Hello world"
@@ -231,7 +231,7 @@ class TestRun:
                 }
             ),
         ]
-        runner = create_claude_runner(ClaudeRunnerConfig(spawn=mock_spawn(lines)))
+        runner = ClaudeRunner(_spawn=mock_spawn(lines))
         result = await runner.run("fail please")
 
         assert result.is_error is True
@@ -240,22 +240,20 @@ class TestRun:
 
     async def test_no_result_raises(self):
         lines = [json.dumps({"type": "system", "subtype": "init", "session_id": "sess-x"})]
-        runner = create_claude_runner(ClaudeRunnerConfig(spawn=mock_spawn(lines)))
+        runner = ClaudeRunner(_spawn=mock_spawn(lines))
 
         with pytest.raises(NoResultError):
             await runner.run("hello")
 
     async def test_non_zero_exit_raises(self):
-        runner = create_claude_runner(
-            ClaudeRunnerConfig(spawn=mock_spawn([], exit_code=1, stderr_text="fatal error"))
-        )
+        runner = ClaudeRunner(_spawn=mock_spawn([], exit_code=1, stderr_text="fatal error"))
 
         with pytest.raises(NonZeroExitError) as exc_info:
             await runner.run("hello")
         assert "fatal error" in str(exc_info.value)
 
     async def test_timeout_raises(self):
-        runner = create_claude_runner(ClaudeRunnerConfig(spawn=slow_spawn()))
+        runner = ClaudeRunner(_spawn=slow_spawn())
 
         with pytest.raises(TimeoutError):
             await runner.run("hello", ClaudeRunOptions(timeout=0.05))
@@ -282,27 +280,19 @@ class TestRun:
                 }
             ),
         ]
-        runner = create_claude_runner(ClaudeRunnerConfig(spawn=mock_spawn(lines)))
+        runner = ClaudeRunner(_spawn=mock_spawn(lines))
         result = await runner.run("hello")
 
         assert result.session_id == "sess-from-init"
 
-    async def test_on_message_callback(self):
-        runner = create_claude_runner(ClaudeRunnerConfig(spawn=mock_spawn(HAPPY_LINES)))
-        callback_messages: list[Message] = []
-
-        result = await runner.run("say hello", on_message=lambda m: callback_messages.append(m))
-
-        assert result.text == "Hello world"
-        assert len(callback_messages) == 3
-
 
 class TestRunStream:
     async def test_happy_path_yields_messages(self):
-        runner = create_claude_runner(ClaudeRunnerConfig(spawn=mock_spawn(STREAM_MULTI_LINES)))
+        runner = ClaudeRunner(_spawn=mock_spawn(STREAM_MULTI_LINES))
         messages: list[Message] = []
 
-        async for msg in runner.run_stream("say hello"):
+        session = await runner.run_stream("say hello")
+        async for msg in session:
             messages.append(msg)
 
         assert len(messages) == 5
@@ -313,10 +303,11 @@ class TestRunStream:
             assert msg.type == "assistant"
 
     async def test_message_ordering(self):
-        runner = create_claude_runner(ClaudeRunnerConfig(spawn=mock_spawn(STREAM_MULTI_LINES)))
+        runner = ClaudeRunner(_spawn=mock_spawn(STREAM_MULTI_LINES))
         types: list[str] = []
 
-        async for msg in runner.run_stream("test ordering"):
+        session = await runner.run_stream("test ordering")
+        async for msg in session:
             types.append(msg.type)
 
         assert types[0] == "system"
@@ -336,59 +327,66 @@ class TestRunStream:
                 }
             ),
         ]
-        runner = create_claude_runner(ClaudeRunnerConfig(spawn=mock_spawn(lines)))
+        runner = ClaudeRunner(_spawn=mock_spawn(lines))
         messages: list[Message] = []
 
-        with pytest.raises(NoResultError):
-            async for msg in runner.run_stream("partial"):
-                messages.append(msg)
+        session = await runner.run_stream("partial")
+        async for msg in session:
+            messages.append(msg)
 
         assert len(messages) == 2
+        with pytest.raises(NoResultError):
+            await session.result
 
     async def test_timeout_raises(self):
-        runner = create_claude_runner(ClaudeRunnerConfig(spawn=slow_spawn()))
+        runner = ClaudeRunner(_spawn=slow_spawn())
+
+        session = await runner.run_stream("hello", ClaudeRunOptions(timeout=0.05))
+        async for _msg in session:
+            pass
 
         with pytest.raises(TimeoutError):
-            async for _msg in runner.run_stream("hello", ClaudeRunOptions(timeout=0.05)):
-                pass
+            await session.result
 
     async def test_non_zero_exit_raises(self):
-        runner = create_claude_runner(
-            ClaudeRunnerConfig(spawn=mock_spawn([], exit_code=1, stderr_text="fatal error"))
+        runner = ClaudeRunner(
+            _spawn=mock_spawn([], exit_code=1, stderr_text="fatal error")
         )
 
+        session = await runner.run_stream("hello")
+        async for _msg in session:
+            pass
+
         with pytest.raises(NonZeroExitError):
-            async for _msg in runner.run_stream("hello"):
-                pass
+            await session.result
 
-    async def test_on_message_callback(self):
-        runner = create_claude_runner(ClaudeRunnerConfig(spawn=mock_spawn(STREAM_MULTI_LINES)))
-        callback_messages: list[Message] = []
-        channel_messages: list[Message] = []
+    async def test_result_accessible_after_iteration(self):
+        """run_stream returns a session with accessible result."""
+        runner = ClaudeRunner(_spawn=mock_spawn(STREAM_MULTI_LINES))
 
-        async for msg in runner.run_stream(
-            "test callback", on_message=lambda m: callback_messages.append(m)
-        ):
-            channel_messages.append(msg)
+        session = await runner.run_stream("test result")
+        async for _msg in session:
+            pass
 
-        assert len(callback_messages) == len(channel_messages)
-        for cb, ch in zip(callback_messages, channel_messages):
-            assert cb.type == ch.type
+        result = await session.result
+        assert result.text == "Hello world"
+        assert result.cost_usd == 0.05
 
     async def test_raw_json_populated(self):
-        runner = create_claude_runner(ClaudeRunnerConfig(spawn=mock_spawn(STREAM_MULTI_LINES)))
+        runner = ClaudeRunner(_spawn=mock_spawn(STREAM_MULTI_LINES))
 
-        async for msg in runner.run_stream("test raw"):
+        session = await runner.run_stream("test raw")
+        async for msg in session:
             assert len(msg.raw) > 0
 
 
 class TestStart:
     async def test_happy_path(self):
-        runner = create_claude_runner(ClaudeRunnerConfig(spawn=mock_spawn(HAPPY_LINES)))
+        runner = ClaudeRunner(_spawn=mock_spawn(HAPPY_LINES))
         session = runner.start("say hello")
 
         messages: list[Message] = []
-        async for msg in session.messages:
+        async for msg in session:
             messages.append(msg)
 
         result = await session.result
@@ -402,7 +400,7 @@ class TestStart:
 
     async def test_session_direct_iteration(self):
         """Session supports ``async for msg in session`` directly."""
-        runner = create_claude_runner(ClaudeRunnerConfig(spawn=mock_spawn(HAPPY_LINES)))
+        runner = ClaudeRunner(_spawn=mock_spawn(HAPPY_LINES))
         session = runner.start("say hello")
 
         messages: list[Message] = []
@@ -414,7 +412,7 @@ class TestStart:
         assert result.text == "Hello world"
 
     async def test_abort_terminates(self):
-        runner = create_claude_runner(ClaudeRunnerConfig(spawn=slow_spawn()))
+        runner = ClaudeRunner(_spawn=slow_spawn())
         session = runner.start("long task", ClaudeRunOptions(timeout=5))
 
         # Abort after a brief delay.
@@ -422,21 +420,21 @@ class TestStart:
         session.abort()
 
         messages: list[Message] = []
-        async for msg in session.messages:
+        async for msg in session:
             messages.append(msg)
 
         with pytest.raises((CancelledError, TimeoutError)):
             await session.result
 
     async def test_send_raises_not_implemented(self):
-        runner = create_claude_runner(ClaudeRunnerConfig(spawn=mock_spawn(HAPPY_LINES)))
+        runner = ClaudeRunner(_spawn=mock_spawn(HAPPY_LINES))
         session = runner.start("hello")
 
         with pytest.raises(NotImplementedError, match="not yet supported"):
             session.send("test")
 
         # Drain to avoid resource leak.
-        async for _msg in session.messages:
+        async for _msg in session:
             pass
 
     async def test_session_id_fallback(self):
@@ -461,35 +459,18 @@ class TestStart:
                 }
             ),
         ]
-        runner = create_claude_runner(ClaudeRunnerConfig(spawn=mock_spawn(lines)))
+        runner = ClaudeRunner(_spawn=mock_spawn(lines))
         session = runner.start("hello")
 
-        async for _msg in session.messages:
+        async for _msg in session:
             pass
 
         result = await session.result
         assert result.session_id == "sess-from-init"
 
-    async def test_on_message_callback(self):
-        runner = create_claude_runner(ClaudeRunnerConfig(spawn=mock_spawn(STREAM_MULTI_LINES)))
-        callback_messages: list[Message] = []
-
-        session = runner.start(
-            "test callback",
-            on_message=lambda m: callback_messages.append(m),
-        )
-
-        messages: list[Message] = []
-        async for msg in session.messages:
-            messages.append(msg)
-
-        assert len(callback_messages) == len(messages)
-        for cb, ch in zip(callback_messages, messages):
-            assert cb.type == ch.type
-
 
 class TestMessageAccessors:
-    """Tests for the typed accessors on Message."""
+    """Tests for the typed property accessors on Message."""
 
     def test_text_from_assistant(self):
         raw = json.dumps(
@@ -503,12 +484,12 @@ class TestMessageAccessors:
             }
         )
         msg = Message(type="assistant", raw=raw)
-        assert msg.text() == "Hello world"
+        assert msg.text == "Hello world"
 
     def test_text_from_result(self):
         raw = json.dumps({"type": "result", "result": "The answer"})
         msg = Message(type="result", raw=raw)
-        assert msg.text() == "The answer"
+        assert msg.text == "The answer"
 
     def test_text_from_stream_event_delta(self):
         raw = json.dumps(
@@ -522,7 +503,7 @@ class TestMessageAccessors:
             }
         )
         msg = Message(type="assistant", raw=raw)
-        assert msg.text() == "chunk"
+        assert msg.text == "chunk"
 
     def test_thinking_from_assistant(self):
         raw = json.dumps(
@@ -536,7 +517,7 @@ class TestMessageAccessors:
             }
         )
         msg = Message(type="assistant", raw=raw)
-        assert msg.thinking() == "Let me think..."
+        assert msg.thinking == "Let me think..."
 
     def test_tool_name_and_input(self):
         raw = json.dumps(
@@ -550,8 +531,8 @@ class TestMessageAccessors:
             }
         )
         msg = Message(type="assistant", raw=raw)
-        assert msg.tool_name() == "Read"
-        assert msg.tool_input() == {"path": "/tmp"}
+        assert msg.tool_name == "Read"
+        assert msg.tool_input == {"path": "/tmp"}
 
     def test_tool_output(self):
         raw = json.dumps(
@@ -560,19 +541,117 @@ class TestMessageAccessors:
                 "content": [{"type": "tool_result", "content": "file contents here"}],
             }
         )
-        msg = Message(type="user", raw=raw)
-        assert msg.tool_output() == "file contents here"
+        msg = Message(type="tool_result", raw=raw)
+        assert msg.tool_output == "file contents here"
 
     def test_no_text_returns_none(self):
         raw = json.dumps({"type": "system", "subtype": "init"})
         msg = Message(type="system", raw=raw)
-        assert msg.text() is None
+        assert msg.text is None
 
     def test_parsed_cache(self):
         raw = json.dumps({"type": "result", "result": "cached"})
         msg = Message(type="result", raw=raw)
         # First call parses.
-        assert msg.text() == "cached"
+        assert msg.text == "cached"
         # Second call uses cache (same _parsed dict).
         assert msg._parsed is not None
-        assert msg.text() == "cached"
+        assert msg.text == "cached"
+
+    def test_is_error_from_error_result(self):
+        raw = json.dumps({"type": "result", "result": "Something failed", "is_error": True})
+        msg = Message(type="result", raw=raw)
+        assert msg.is_error is True
+
+    def test_is_error_false_by_default(self):
+        raw = json.dumps({"type": "assistant", "message": {"content": []}})
+        msg = Message(type="assistant", raw=raw)
+        assert msg.is_error is False
+
+    def test_error_message(self):
+        raw = json.dumps({"type": "result", "result": "Something failed", "is_error": True})
+        msg = Message(type="result", raw=raw)
+        assert msg.error_message == "Something failed"
+
+    def test_error_message_none_when_not_error(self):
+        raw = json.dumps({"type": "result", "result": "OK", "is_error": False})
+        msg = Message(type="result", raw=raw)
+        assert msg.error_message is None
+
+
+class TestMessageTypeMapping:
+    """Tests for INTERFACE.md message type taxonomy."""
+
+    async def test_tool_result_type(self):
+        """User messages containing tool_result blocks are mapped to 'tool_result'."""
+        lines = [
+            json.dumps(
+                {
+                    "type": "system",
+                    "subtype": "init",
+                    "session_id": "sess-t1",
+                    "model": "claude-sonnet-4-6",
+                }
+            ),
+            json.dumps(
+                {
+                    "type": "user",
+                    "content": [{"type": "tool_result", "content": "file contents"}],
+                }
+            ),
+            json.dumps(
+                {
+                    "type": "result",
+                    "subtype": "success",
+                    "result": "done",
+                    "is_error": False,
+                    "total_cost_usd": 0.01,
+                    "duration_ms": 100,
+                    "usage": {"input_tokens": 10, "output_tokens": 5},
+                }
+            ),
+        ]
+        runner = ClaudeRunner(_spawn=mock_spawn(lines))
+        messages: list[Message] = []
+
+        async for msg in runner.start("test"):
+            messages.append(msg)
+
+        assert messages[1].type == "tool_result"
+
+    async def test_plain_user_type_preserved(self):
+        """User messages without tool_result stay as 'user'."""
+        lines = [
+            json.dumps(
+                {
+                    "type": "system",
+                    "subtype": "init",
+                    "session_id": "sess-t2",
+                    "model": "claude-sonnet-4-6",
+                }
+            ),
+            json.dumps(
+                {
+                    "type": "user",
+                    "content": [{"type": "text", "text": "hello"}],
+                }
+            ),
+            json.dumps(
+                {
+                    "type": "result",
+                    "subtype": "success",
+                    "result": "done",
+                    "is_error": False,
+                    "total_cost_usd": 0.01,
+                    "duration_ms": 100,
+                    "usage": {"input_tokens": 10, "output_tokens": 5},
+                }
+            ),
+        ]
+        runner = ClaudeRunner(_spawn=mock_spawn(lines))
+        messages: list[Message] = []
+
+        async for msg in runner.start("test"):
+            messages.append(msg)
+
+        assert messages[1].type == "user"
