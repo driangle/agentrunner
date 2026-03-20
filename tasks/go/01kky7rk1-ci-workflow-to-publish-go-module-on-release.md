@@ -1,7 +1,7 @@
 ---
 title: "CI workflow to publish Go module on release"
 id: "01kky7rk1"
-status: pending
+status: completed
 priority: low
 type: chore
 tags: ["ci", "release"]
@@ -16,12 +16,12 @@ Create a GitHub Actions workflow that validates the Go module when a Go-specific
 
 ## Tasks
 
-- [ ] Create `.github/workflows/publish-go.yml` GitHub Actions workflow
-- [ ] Trigger on push of tags matching `go/v*` pattern
-- [ ] Add job steps: checkout, setup Go, run `make check-go`
-- [ ] Verify the module is fetchable via `GOPROXY=https://proxy.golang.org go list -m <module>@<version>`
-- [ ] Optionally create a GitHub Release from the tag with auto-generated notes
-- [ ] Document the release process in the Go library README
+- [x] Create `.github/workflows/publish-go.yml` GitHub Actions workflow
+- [x] Trigger on push of tags matching `go/v*` pattern
+- [x] Add job steps: checkout, setup Go, run `make check-go`
+- [x] Verify the module is fetchable via `GOPROXY=https://proxy.golang.org go list -m <module>@<version>`
+- [x] Optionally create a GitHub Release from the tag with auto-generated notes
+- [x] Document the release process in the Go library README
 
 ## Acceptance Criteria
 

@@ -236,3 +236,21 @@ cd go && go test -race ./...
 ```
 
 Tests use a mock `CommandBuilder` to simulate CLI output without requiring the real `claude` binary. See `claudecode/runner_test.go` for examples of how to write tests with the mock builder.
+
+## Releasing
+
+Go modules are published automatically by the Go module proxy when a tag exists. This project uses an `agentrunner/v*` tag convention (matching the module subdirectory) to enable independent releases per language.
+
+To release a new version:
+
+1. Ensure `main` is clean and all checks pass (`make check-go`).
+2. Tag the release:
+   ```bash
+   git tag agentrunner/v0.1.0
+   git push origin agentrunner/v0.1.0
+   ```
+3. The `publish-go` GitHub Actions workflow will:
+   - Run `make check-go` to validate the module.
+   - Verify the module is fetchable on the Go module proxy.
+   - Create a GitHub Release with auto-generated notes.
+4. The module will be available on [pkg.go.dev](https://pkg.go.dev/github.com/driangle/agent-runner/agentrunner) shortly after.
