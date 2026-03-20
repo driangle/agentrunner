@@ -14,12 +14,12 @@ from ..errors import (
     NotFoundError,
     TimeoutError,
 )
-from ..types import Message, OnMessageFn, Result
+from ..types import Message, Result
 from .args import build_args
 from .mapping import map_message_type, map_result
-from .options import ClaudeRunnerConfig, ClaudeRunOptions, SpawnFn
+from .options import ClaudeRunOptions, Logger
 from .parser import parse
-from .process import collect_error_detail, log_cmd, resolve_spawn
+from .process import SpawnFn, collect_error_detail, default_spawn, log_cmd
 from .types import StreamMessage
 from .version import check_version
 
@@ -33,19 +33,17 @@ class ClaudeSession:
 
     def __init__(
         self,
-        config: ClaudeRunnerConfig,
+        logger: Logger | None,
         spawn_fn: SpawnFn,
         binary: str,
         prompt: str,
         options: ClaudeRunOptions,
-        on_message: OnMessageFn | None = None,
     ) -> None:
-        self._config = config
+        self._logger = logger
         self._spawn_fn = spawn_fn
         self._binary = binary
         self._prompt = prompt
         self._options = options
-        self._on_message = on_message
 
         self._loop = asyncio.get_running_loop()
         self._queue: asyncio.Queue[Message | None] = asyncio.Queue()
@@ -62,7 +60,7 @@ class ClaudeSession:
         args = build_args(self._prompt, self._options)
         env = {**os.environ, **self._options.env} if self._options.env else None
 
-        log_cmd(self._config, self._binary, args, self._options.working_dir)
+        log_cmd(self._logger, self._binary, args, self._options.working_dir)
 
         try:
             self._process = await self._spawn_fn(
@@ -116,10 +114,7 @@ class ClaudeSession:
                 if parsed.type == "result":
                     result_msg = parsed
 
-                msg = Message(type=map_message_type(parsed.type), raw=line)
-
-                if self._on_message:
-                    self._on_message(msg)
+                msg = Message(type=map_message_type(parsed.type, line), raw=line)
 
                 await self._queue.put(msg)
 
@@ -146,8 +141,8 @@ class ClaudeSession:
                 stderr_bytes = await self._process.stderr.read() if self._process.stderr else b""
                 stderr = stderr_bytes.decode("utf-8", errors="replace")
                 detail = collect_error_detail(stderr, stdout_errors)
-                if self._config.logger:
-                    self._config.logger.error(
+                if self._logger:
+                    self._logger.error(
                         "CLI command failed",
                         extra={
                             "exit_code": exit_code,
@@ -182,10 +177,6 @@ class ClaudeSession:
     def __aiter__(self) -> AsyncIterator[Message]:
         return self._message_iter()
 
-    @property
-    def messages(self) -> AsyncIterator[Message]:
-        return self._message_iter()
-
     async def _message_iter(self) -> AsyncIterator[Message]:
         while True:
             msg = await self._queue.get()
@@ -210,17 +201,33 @@ class ClaudeSession:
 
 
 class ClaudeRunner:
-    """Claude Code runner that implements the Runner protocol."""
+    """Claude Code runner.
 
-    def __init__(self, config: ClaudeRunnerConfig) -> None:
-        self._config = config
-        self._spawn_fn, self._binary = resolve_spawn(config)
+    Construct directly with keyword arguments::
+
+        runner = ClaudeRunner(binary="/usr/local/bin/claude", logger=my_logger)
+
+    For testing, pass ``_spawn`` to inject a fake subprocess spawner::
+
+        runner = ClaudeRunner(_spawn=my_fake_spawn)
+    """
+
+    def __init__(
+        self,
+        *,
+        binary: str = "claude",
+        logger: Logger | None = None,
+        _spawn: SpawnFn | None = None,
+    ) -> None:
+        self._binary = binary
+        self._logger = logger
+        self._spawn_fn: SpawnFn = _spawn or default_spawn
+        self._has_custom_spawn = _spawn is not None
         self._version_checked = False
 
     async def _ensure_version(self) -> None:
         """Check the CLI version once per runner instance."""
-        if self._version_checked or self._config.spawn is not None:
-            # Skip version check when using injected spawn (tests).
+        if self._version_checked or self._has_custom_spawn:
             return
         await check_version(self._binary)
         self._version_checked = True
@@ -229,26 +236,23 @@ class ClaudeRunner:
         self,
         prompt: str,
         options: ClaudeRunOptions | None = None,
-        on_message: OnMessageFn | None = None,
     ) -> ClaudeSession:
         return ClaudeSession(
-            self._config,
+            self._logger,
             self._spawn_fn,
             self._binary,
             prompt,
             options or ClaudeRunOptions(),
-            on_message=on_message,
         )
 
     async def run(
         self,
         prompt: str,
         options: ClaudeRunOptions | None = None,
-        on_message: OnMessageFn | None = None,
     ) -> Result:
         await self._ensure_version()
-        session = self.start(prompt, options, on_message=on_message)
-        async for _msg in session.messages:
+        session = self.start(prompt, options)
+        async for _msg in session:
             pass
         return await session.result
 
@@ -256,16 +260,11 @@ class ClaudeRunner:
         self,
         prompt: str,
         options: ClaudeRunOptions | None = None,
-        on_message: OnMessageFn | None = None,
-    ) -> AsyncIterator[Message]:
+    ) -> ClaudeSession:
+        """Start a session and return it for streaming.
+
+        The returned session is async-iterable and also provides
+        ``session.result`` and ``session.abort()``.
+        """
         await self._ensure_version()
-        session = self.start(prompt, options, on_message=on_message)
-        async for msg in session.messages:
-            yield msg
-        # Propagate errors after stream is drained.
-        await session.result
-
-
-def create_claude_runner(config: ClaudeRunnerConfig | None = None) -> ClaudeRunner:
-    """Create a Claude Code runner."""
-    return ClaudeRunner(config or ClaudeRunnerConfig())
+        return self.start(prompt, options)

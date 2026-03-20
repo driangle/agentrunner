@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import asyncio
 import json
-from collections.abc import AsyncIterator, Callable
+from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
-from typing import Any, Protocol
+from typing import Any, Protocol, runtime_checkable
 
 
 @dataclass
@@ -36,8 +36,8 @@ class Result:
 class Message:
     """The unit of streaming output from run_stream.
 
-    Provides typed accessors for common fields so callers don't need to
-    re-parse ``raw`` JSON for typical use cases.
+    Provides typed property accessors for common fields so callers don't
+    need to re-parse ``raw`` JSON for typical use cases.
     """
 
     type: str
@@ -50,6 +50,7 @@ class Message:
             self._parsed = json.loads(self.raw)
         return self._parsed
 
+    @property
     def text(self) -> str | None:
         """Extract text content from assistant or result messages."""
         d = self._raw_dict()
@@ -68,6 +69,7 @@ class Message:
                 return delta.get("text")
         return None
 
+    @property
     def thinking(self) -> str | None:
         """Extract thinking content from assistant messages."""
         d = self._raw_dict()
@@ -84,6 +86,7 @@ class Message:
                 return delta.get("thinking")
         return None
 
+    @property
     def tool_name(self) -> str | None:
         """Extract tool name from tool_use content blocks."""
         d = self._raw_dict()
@@ -94,6 +97,7 @@ class Message:
                     return block.get("name")
         return None
 
+    @property
     def tool_input(self) -> Any | None:
         """Extract tool input from tool_use content blocks."""
         d = self._raw_dict()
@@ -104,6 +108,7 @@ class Message:
                     return block.get("input")
         return None
 
+    @property
     def tool_output(self) -> str | None:
         """Extract tool output from user/tool_result messages."""
         d = self._raw_dict()
@@ -111,6 +116,20 @@ class Message:
             for block in d.get("content", []):
                 if isinstance(block, dict) and block.get("type") == "tool_result":
                     return block.get("content")
+        return None
+
+    @property
+    def is_error(self) -> bool:
+        """Whether this message represents an error."""
+        d = self._raw_dict()
+        return bool(d.get("is_error", False))
+
+    @property
+    def error_message(self) -> str | None:
+        """Extract error description from error or result messages."""
+        d = self._raw_dict()
+        if d.get("is_error"):
+            return d.get("result") or d.get("error")
         return None
 
 
@@ -132,9 +151,7 @@ class RunOptions:
     skip_permissions: bool = False
 
 
-OnMessageFn = Callable[[Message], None]
-
-
+@runtime_checkable
 class Session(Protocol):
     """Session encapsulates a running agent process."""
 
@@ -148,6 +165,7 @@ class Session(Protocol):
     def send(self, input: Any) -> None: ...
 
 
+@runtime_checkable
 class Runner(Protocol):
     """Runner executes prompts against an AI coding agent."""
 
@@ -155,19 +173,16 @@ class Runner(Protocol):
         self,
         prompt: str,
         options: RunOptions | None = None,
-        on_message: OnMessageFn | None = None,
     ) -> Session: ...
 
     async def run(
         self,
         prompt: str,
         options: RunOptions | None = None,
-        on_message: OnMessageFn | None = None,
     ) -> Result: ...
 
     def run_stream(
         self,
         prompt: str,
         options: RunOptions | None = None,
-        on_message: OnMessageFn | None = None,
     ) -> AsyncIterator[Message]: ...

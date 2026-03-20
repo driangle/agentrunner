@@ -20,13 +20,7 @@ import asyncio
 import logging
 import sys
 
-from agentrunner.claudecode import (
-    ClaudeRunner,
-    ClaudeRunnerConfig,
-    ClaudeRunOptions,
-    create_claude_runner,
-    parse,
-)
+from agentrunner import ClaudeRunner, ClaudeRunOptions
 
 
 async def example_simple_run(runner: ClaudeRunner) -> None:
@@ -51,17 +45,14 @@ async def example_streaming(runner: ClaudeRunner, verbose: bool) -> None:
     print(f"Prompt: {prompt}")
     print("---")
 
-    model = "unknown"
-
-    async for msg in runner.run_stream(
+    session = await runner.run_stream(
         prompt, ClaudeRunOptions(max_turns=1, timeout=30, include_partial_messages=True)
-    ):
+    )
+
+    async for msg in session:
         if msg.type == "system":
             if verbose:
                 print(f"[system] {msg.raw}")
-            parsed = parse(msg.raw)
-            if parsed.model:
-                model = parsed.model
 
         elif msg.type == "assistant":
             # With --include-partial-messages, the CLI emits two kinds of
@@ -69,20 +60,19 @@ async def example_streaming(runner: ClaudeRunner, verbose: bool) -> None:
             #   1. stream_event with content_block_delta — real-time text deltas
             #   2. assistant — full accumulated message (arrives at the end)
             # Use the typed accessor to get text deltas for real-time streaming.
-            delta_text = msg.text()
+            delta_text = msg.text
             if delta_text:
                 sys.stdout.write(delta_text)
                 sys.stdout.flush()
 
         elif msg.type == "result":
-            parsed = parse(msg.raw)
             print("\n---")
-            print(f"Cost:     ${parsed.total_cost_usd or 0:.4f}")
-            print(f"Duration: {parsed.duration_ms or 0}ms")
-            print(f"Turns:    {parsed.num_turns or 0}")
-            print(f"Model:    {parsed.model or model}")
-            print(f"Session:  {parsed.session_id or ''}")
-            print(f"Error:    {parsed.is_error or False}")
+
+    result = await session.result
+    print(f"Cost:     ${result.cost_usd:.4f}")
+    print(f"Duration: {result.duration_ms}ms")
+    print(f"Session:  {result.session_id}")
+    print(f"Error:    {result.is_error}")
 
 
 async def example_session_resume(runner: ClaudeRunner) -> None:
@@ -142,7 +132,7 @@ async def main() -> None:
         logging.basicConfig(level=logging.DEBUG, stream=sys.stderr)
         logger = logging.getLogger("agentrunner.claudecode")
 
-    runner = create_claude_runner(ClaudeRunnerConfig(binary=args.binary, logger=logger))
+    runner = ClaudeRunner(binary=args.binary, logger=logger)
 
     print("=== Example 1: Simple Run ===")
     await example_simple_run(runner)

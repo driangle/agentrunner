@@ -4,25 +4,41 @@ from __future__ import annotations
 
 import asyncio
 import shlex
+from typing import Protocol
 
-from .options import ClaudeRunnerConfig, SpawnFn
+from .options import Logger
+
+
+class SpawnFn(Protocol):
+    """Function that spawns an async subprocess.
+
+    Internal protocol used for dependency injection in tests.
+    """
+
+    async def __call__(
+        self,
+        program: str,
+        *args: str,
+        cwd: str | None = None,
+        env: dict[str, str] | None = None,
+    ) -> asyncio.subprocess.Process: ...
 
 
 def log_cmd(
-    config: ClaudeRunnerConfig,
+    logger: Logger | None,
     binary: str,
     args: list[str],
     cwd: str | None = None,
 ) -> None:
     """Log the command about to be executed."""
-    if not config.logger:
+    if not logger:
         return
 
     cmd = " ".join(shlex.quote(a) for a in [binary, *args])
-    config.logger.debug("executing CLI command", extra={"cmd": cmd, "dir": cwd or ""})
+    logger.debug("executing CLI command", extra={"cmd": cmd, "dir": cwd or ""})
 
 
-async def _default_spawn(
+async def default_spawn(
     program: str,
     *args: str,
     cwd: str | None = None,
@@ -37,13 +53,6 @@ async def _default_spawn(
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
     )
-
-
-def resolve_spawn(config: ClaudeRunnerConfig) -> tuple[SpawnFn, str]:
-    """Resolve the spawn function and binary name."""
-    binary = config.binary or "claude"
-    spawn_fn: SpawnFn = config.spawn or _default_spawn
-    return spawn_fn, binary
 
 
 def collect_error_detail(stderr: str, stdout_errors: list[str]) -> str:
