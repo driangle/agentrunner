@@ -34,7 +34,7 @@ async def example_simple_run(runner: ClaudeRunner) -> None:
     prompt = "What is 2+2? Reply with just the number."
     print(f"Prompt:   {prompt}")
 
-    result = await runner.run(prompt, ClaudeRunOptions(max_turns=1, timeout=30_000))
+    result = await runner.run(prompt, ClaudeRunOptions(max_turns=1, timeout=30))
 
     print(f"Response: {result.text}")
     print(f"Cost:     ${result.cost_usd:.4f}")
@@ -53,10 +53,9 @@ async def example_streaming(runner: ClaudeRunner, verbose: bool) -> None:
 
     model = "unknown"
 
-    stream = await runner.run_stream(
-        prompt, ClaudeRunOptions(max_turns=1, timeout=30_000, include_partial_messages=True)
-    )
-    async for msg in stream:
+    async for msg in runner.run_stream(
+        prompt, ClaudeRunOptions(max_turns=1, timeout=30, include_partial_messages=True)
+    ):
         if msg.type == "system":
             if verbose:
                 print(f"[system] {msg.raw}")
@@ -69,19 +68,11 @@ async def example_streaming(runner: ClaudeRunner, verbose: bool) -> None:
             # messages mapped to "assistant":
             #   1. stream_event with content_block_delta — real-time text deltas
             #   2. assistant — full accumulated message (arrives at the end)
-            # Print deltas for real-time streaming; skip the final assistant
-            # message to avoid duplicating the output.
-            parsed = parse(msg.raw)
-            if parsed.type == "stream_event" and parsed.event:
-                # Access delta from the raw JSON for text deltas.
-                import json
-
-                raw = json.loads(msg.raw)
-                event = raw.get("event", {})
-                delta = event.get("delta", {})
-                if delta.get("type") == "text_delta" and delta.get("text"):
-                    sys.stdout.write(delta["text"])
-                    sys.stdout.flush()
+            # Use the typed accessor to get text deltas for real-time streaming.
+            delta_text = msg.text()
+            if delta_text:
+                sys.stdout.write(delta_text)
+                sys.stdout.flush()
 
         elif msg.type == "result":
             parsed = parse(msg.raw)
@@ -100,7 +91,7 @@ async def example_session_resume(runner: ClaudeRunner) -> None:
     prompt1 = "Remember this number: 42. Just confirm you've noted it."
     print(f"Prompt 1: {prompt1}")
 
-    first = await runner.run(prompt1, ClaudeRunOptions(max_turns=1, timeout=30_000))
+    first = await runner.run(prompt1, ClaudeRunOptions(max_turns=1, timeout=30))
 
     print(f"Response: {first.text}")
     print(f"Session:  {first.session_id}")
@@ -114,7 +105,7 @@ async def example_session_resume(runner: ClaudeRunner) -> None:
 
     second = await runner.run(
         prompt2,
-        ClaudeRunOptions(max_turns=1, timeout=30_000, resume=first.session_id),
+        ClaudeRunOptions(max_turns=1, timeout=30, resume=first.session_id),
     )
 
     print(f"Response: {second.text}")
@@ -125,10 +116,10 @@ async def example_session(runner: ClaudeRunner) -> None:
     prompt = "What is the capital of France? Reply with just the city name."
     print(f"Prompt: {prompt}")
 
-    session = runner.start(prompt, ClaudeRunOptions(max_turns=1, timeout=30_000))
+    session = runner.start(prompt, ClaudeRunOptions(max_turns=1, timeout=30))
 
-    # Iterate messages as they arrive.
-    async for msg in session.messages:
+    # Iterate messages as they arrive — session is directly iterable.
+    async for msg in session:
         preview = msg.raw[:80] + "..." if len(msg.raw) > 80 else msg.raw
         print(f"[{msg.type}] {preview}")
 

@@ -7,9 +7,13 @@ import json
 from .types import (
     AssistantMessage,
     ContentBlock,
+    ContentBlockInfo,
+    Delta,
+    MessageStartData,
     ResultUsage,
     StreamEventInner,
     StreamMessage,
+    StreamUsage,
 )
 
 
@@ -43,10 +47,60 @@ def _parse_result_usage(raw: dict) -> ResultUsage:
     )
 
 
+def _parse_delta(raw: dict) -> Delta:
+    return Delta(
+        type=raw.get("type"),
+        text=raw.get("text"),
+        thinking=raw.get("thinking"),
+        partial_json=raw.get("partial_json"),
+        stop_reason=raw.get("stop_reason"),
+        stop_sequence=raw.get("stop_sequence"),
+    )
+
+
+def _parse_content_block_info(raw: dict) -> ContentBlockInfo:
+    return ContentBlockInfo(
+        type=raw.get("type", ""),
+        name=raw.get("name"),
+        id=raw.get("id"),
+    )
+
+
+def _parse_stream_usage(raw: dict) -> StreamUsage:
+    return StreamUsage(
+        input_tokens=raw.get("input_tokens", 0),
+        output_tokens=raw.get("output_tokens", 0),
+    )
+
+
+def _parse_message_start_data(raw: dict) -> MessageStartData:
+    usage = None
+    if "usage" in raw and isinstance(raw["usage"], dict):
+        usage = _parse_stream_usage(raw["usage"])
+    return MessageStartData(
+        model=raw.get("model", ""),
+        id=raw.get("id", ""),
+        usage=usage,
+    )
+
+
 def _parse_stream_event(raw: dict) -> StreamEventInner | None:
     if not isinstance(raw, dict) or not isinstance(raw.get("type"), str):
         return None
-    return StreamEventInner(type=raw["type"])
+
+    event = StreamEventInner(type=raw["type"])
+    event.index = raw.get("index")
+
+    if "delta" in raw and isinstance(raw["delta"], dict):
+        event.delta = _parse_delta(raw["delta"])
+    if "content_block" in raw and isinstance(raw["content_block"], dict):
+        event.content_block = _parse_content_block_info(raw["content_block"])
+    if "message" in raw and isinstance(raw["message"], dict):
+        event.message = _parse_message_start_data(raw["message"])
+    if "usage" in raw and isinstance(raw["usage"], dict):
+        event.usage = _parse_stream_usage(raw["usage"])
+
+    return event
 
 
 def parse(line: str) -> StreamMessage:

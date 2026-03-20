@@ -3,11 +3,9 @@
 from __future__ import annotations
 
 import asyncio
-import re
+import shlex
 
 from .options import ClaudeRunnerConfig, SpawnFn
-
-_NEEDS_QUOTING = re.compile(r'[\s"\'\\]')
 
 
 def log_cmd(
@@ -20,14 +18,8 @@ def log_cmd(
     if not config.logger:
         return
 
-    parts: list[str] = []
-    for a in [binary, *args]:
-        if _NEEDS_QUOTING.search(a):
-            parts.append(f"'{a}'")
-        else:
-            parts.append(a)
-
-    config.logger.debug("executing CLI command", extra={"cmd": " ".join(parts), "dir": cwd or ""})
+    cmd = " ".join(shlex.quote(a) for a in [binary, *args])
+    config.logger.debug("executing CLI command", extra={"cmd": cmd, "dir": cwd or ""})
 
 
 async def _default_spawn(

@@ -108,82 +108,98 @@ def slow_spawn():
 
 
 HAPPY_LINES = [
-    json.dumps({
-        "type": "system",
-        "subtype": "init",
-        "session_id": "sess-1",
-        "model": "claude-sonnet-4-6",
-    }),
-    json.dumps({
-        "type": "assistant",
-        "message": {
+    json.dumps(
+        {
+            "type": "system",
+            "subtype": "init",
+            "session_id": "sess-1",
             "model": "claude-sonnet-4-6",
-            "id": "msg_01",
-            "content": [{"type": "text", "text": "Hello world"}],
-        },
-    }),
-    json.dumps({
-        "type": "result",
-        "subtype": "success",
-        "result": "Hello world",
-        "is_error": False,
-        "total_cost_usd": 0.05,
-        "duration_ms": 1234,
-        "duration_api_ms": 1100,
-        "num_turns": 2,
-        "session_id": "sess-1",
-        "usage": {
-            "input_tokens": 100,
-            "output_tokens": 50,
-            "cache_creation_input_tokens": 10,
-            "cache_read_input_tokens": 20,
-        },
-    }),
+        }
+    ),
+    json.dumps(
+        {
+            "type": "assistant",
+            "message": {
+                "model": "claude-sonnet-4-6",
+                "id": "msg_01",
+                "content": [{"type": "text", "text": "Hello world"}],
+            },
+        }
+    ),
+    json.dumps(
+        {
+            "type": "result",
+            "subtype": "success",
+            "result": "Hello world",
+            "is_error": False,
+            "total_cost_usd": 0.05,
+            "duration_ms": 1234,
+            "duration_api_ms": 1100,
+            "num_turns": 2,
+            "session_id": "sess-1",
+            "usage": {
+                "input_tokens": 100,
+                "output_tokens": 50,
+                "cache_creation_input_tokens": 10,
+                "cache_read_input_tokens": 20,
+            },
+        }
+    ),
 ]
 
 STREAM_MULTI_LINES = [
-    json.dumps({
-        "type": "system",
-        "subtype": "init",
-        "session_id": "sess-s1",
-        "model": "claude-sonnet-4-6",
-    }),
-    json.dumps({
-        "type": "stream_event",
-        "event": {
-            "type": "content_block_delta",
-            "index": 0,
-            "delta": {"type": "text_delta", "text": "Hello"},
-        },
-        "session_id": "sess-s1",
-    }),
-    json.dumps({
-        "type": "stream_event",
-        "event": {
-            "type": "content_block_delta",
-            "index": 0,
-            "delta": {"type": "text_delta", "text": " world"},
-        },
-        "session_id": "sess-s1",
-    }),
-    json.dumps({
-        "type": "assistant",
-        "message": {
+    json.dumps(
+        {
+            "type": "system",
+            "subtype": "init",
+            "session_id": "sess-s1",
             "model": "claude-sonnet-4-6",
-            "id": "msg_01",
-            "content": [{"type": "text", "text": "Hello world"}],
-        },
-    }),
-    json.dumps({
-        "type": "result",
-        "subtype": "success",
-        "result": "Hello world",
-        "is_error": False,
-        "total_cost_usd": 0.05,
-        "duration_ms": 500,
-        "session_id": "sess-s1",
-        "usage": {"input_tokens": 100, "output_tokens": 50},
-    }),
+        }
+    ),
+    json.dumps(
+        {
+            "type": "stream_event",
+            "event": {
+                "type": "content_block_delta",
+                "index": 0,
+                "delta": {"type": "text_delta", "text": "Hello"},
+            },
+            "session_id": "sess-s1",
+        }
+    ),
+    json.dumps(
+        {
+            "type": "stream_event",
+            "event": {
+                "type": "content_block_delta",
+                "index": 0,
+                "delta": {"type": "text_delta", "text": " world"},
+            },
+            "session_id": "sess-s1",
+        }
+    ),
+    json.dumps(
+        {
+            "type": "assistant",
+            "message": {
+                "model": "claude-sonnet-4-6",
+                "id": "msg_01",
+                "content": [{"type": "text", "text": "Hello world"}],
+            },
+        }
+    ),
+    json.dumps(
+        {
+            "type": "result",
+            "subtype": "success",
+            "result": "Hello world",
+            "is_error": False,
+            "total_cost_usd": 0.05,
+            "duration_ms": 500,
+            "session_id": "sess-s1",
+            "usage": {"input_tokens": 100, "output_tokens": 50},
+        }
+    ),
 ]
 
 
@@ -204,14 +220,16 @@ class TestRun:
 
     async def test_error_result(self):
         lines = [
-            json.dumps({
-                "type": "result",
-                "subtype": "error",
-                "result": "Something failed",
-                "is_error": True,
-                "session_id": "sess-err",
-                "usage": {"input_tokens": 10, "output_tokens": 5},
-            }),
+            json.dumps(
+                {
+                    "type": "result",
+                    "subtype": "error",
+                    "result": "Something failed",
+                    "is_error": True,
+                    "session_id": "sess-err",
+                    "usage": {"input_tokens": 10, "output_tokens": 5},
+                }
+            ),
         ]
         runner = create_claude_runner(ClaudeRunnerConfig(spawn=mock_spawn(lines)))
         result = await runner.run("fail please")
@@ -240,30 +258,43 @@ class TestRun:
         runner = create_claude_runner(ClaudeRunnerConfig(spawn=slow_spawn()))
 
         with pytest.raises(TimeoutError):
-            await runner.run("hello", ClaudeRunOptions(timeout=50))
+            await runner.run("hello", ClaudeRunOptions(timeout=0.05))
 
     async def test_session_id_fallback_to_init(self):
         lines = [
-            json.dumps({
-                "type": "system",
-                "subtype": "init",
-                "session_id": "sess-from-init",
-                "model": "claude-sonnet-4-6",
-            }),
-            json.dumps({
-                "type": "result",
-                "subtype": "success",
-                "result": "done",
-                "is_error": False,
-                "total_cost_usd": 0.01,
-                "duration_ms": 100,
-                "usage": {"input_tokens": 10, "output_tokens": 5},
-            }),
+            json.dumps(
+                {
+                    "type": "system",
+                    "subtype": "init",
+                    "session_id": "sess-from-init",
+                    "model": "claude-sonnet-4-6",
+                }
+            ),
+            json.dumps(
+                {
+                    "type": "result",
+                    "subtype": "success",
+                    "result": "done",
+                    "is_error": False,
+                    "total_cost_usd": 0.01,
+                    "duration_ms": 100,
+                    "usage": {"input_tokens": 10, "output_tokens": 5},
+                }
+            ),
         ]
         runner = create_claude_runner(ClaudeRunnerConfig(spawn=mock_spawn(lines)))
         result = await runner.run("hello")
 
         assert result.session_id == "sess-from-init"
+
+    async def test_on_message_callback(self):
+        runner = create_claude_runner(ClaudeRunnerConfig(spawn=mock_spawn(HAPPY_LINES)))
+        callback_messages: list[Message] = []
+
+        result = await runner.run("say hello", on_message=lambda m: callback_messages.append(m))
+
+        assert result.text == "Hello world"
+        assert len(callback_messages) == 3
 
 
 class TestRunStream:
@@ -271,8 +302,7 @@ class TestRunStream:
         runner = create_claude_runner(ClaudeRunnerConfig(spawn=mock_spawn(STREAM_MULTI_LINES)))
         messages: list[Message] = []
 
-        stream = await runner.run_stream("say hello")
-        async for msg in stream:
+        async for msg in runner.run_stream("say hello"):
             messages.append(msg)
 
         assert len(messages) == 5
@@ -286,8 +316,7 @@ class TestRunStream:
         runner = create_claude_runner(ClaudeRunnerConfig(spawn=mock_spawn(STREAM_MULTI_LINES)))
         types: list[str] = []
 
-        stream = await runner.run_stream("test ordering")
-        async for msg in stream:
+        async for msg in runner.run_stream("test ordering"):
             types.append(msg.type)
 
         assert types[0] == "system"
@@ -296,21 +325,22 @@ class TestRunStream:
     async def test_no_result_raises(self):
         lines = [
             json.dumps({"type": "system", "subtype": "init", "session_id": "sess-nr"}),
-            json.dumps({
-                "type": "assistant",
-                "message": {
-                    "model": "claude-sonnet-4-6",
-                    "id": "msg_01",
-                    "content": [{"type": "text", "text": "partial"}],
-                },
-            }),
+            json.dumps(
+                {
+                    "type": "assistant",
+                    "message": {
+                        "model": "claude-sonnet-4-6",
+                        "id": "msg_01",
+                        "content": [{"type": "text", "text": "partial"}],
+                    },
+                }
+            ),
         ]
         runner = create_claude_runner(ClaudeRunnerConfig(spawn=mock_spawn(lines)))
         messages: list[Message] = []
 
         with pytest.raises(NoResultError):
-            stream = await runner.run_stream("partial")
-            async for msg in stream:
+            async for msg in runner.run_stream("partial"):
                 messages.append(msg)
 
         assert len(messages) == 2
@@ -319,8 +349,7 @@ class TestRunStream:
         runner = create_claude_runner(ClaudeRunnerConfig(spawn=slow_spawn()))
 
         with pytest.raises(TimeoutError):
-            stream = await runner.run_stream("hello", ClaudeRunOptions(timeout=50))
-            async for _msg in stream:
+            async for _msg in runner.run_stream("hello", ClaudeRunOptions(timeout=0.05)):
                 pass
 
     async def test_non_zero_exit_raises(self):
@@ -329,8 +358,7 @@ class TestRunStream:
         )
 
         with pytest.raises(NonZeroExitError):
-            stream = await runner.run_stream("hello")
-            async for _msg in stream:
+            async for _msg in runner.run_stream("hello"):
                 pass
 
     async def test_on_message_callback(self):
@@ -338,9 +366,9 @@ class TestRunStream:
         callback_messages: list[Message] = []
         channel_messages: list[Message] = []
 
-        opts = ClaudeRunOptions(on_message=lambda m: callback_messages.append(m))
-        stream = await runner.run_stream("test callback", opts)
-        async for msg in stream:
+        async for msg in runner.run_stream(
+            "test callback", on_message=lambda m: callback_messages.append(m)
+        ):
             channel_messages.append(msg)
 
         assert len(callback_messages) == len(channel_messages)
@@ -350,8 +378,7 @@ class TestRunStream:
     async def test_raw_json_populated(self):
         runner = create_claude_runner(ClaudeRunnerConfig(spawn=mock_spawn(STREAM_MULTI_LINES)))
 
-        stream = await runner.run_stream("test raw")
-        async for msg in stream:
+        async for msg in runner.run_stream("test raw"):
             assert len(msg.raw) > 0
 
 
@@ -373,9 +400,22 @@ class TestStart:
         assert result.session_id == "sess-1"
         assert result.cost_usd == 0.05
 
+    async def test_session_direct_iteration(self):
+        """Session supports ``async for msg in session`` directly."""
+        runner = create_claude_runner(ClaudeRunnerConfig(spawn=mock_spawn(HAPPY_LINES)))
+        session = runner.start("say hello")
+
+        messages: list[Message] = []
+        async for msg in session:
+            messages.append(msg)
+
+        result = await session.result
+        assert len(messages) == 3
+        assert result.text == "Hello world"
+
     async def test_abort_terminates(self):
         runner = create_claude_runner(ClaudeRunnerConfig(spawn=slow_spawn()))
-        session = runner.start("long task", ClaudeRunOptions(timeout=5000))
+        session = runner.start("long task", ClaudeRunOptions(timeout=5))
 
         # Abort after a brief delay.
         await asyncio.sleep(0.05)
@@ -388,11 +428,11 @@ class TestStart:
         with pytest.raises((CancelledError, TimeoutError)):
             await session.result
 
-    async def test_send_raises(self):
+    async def test_send_raises_not_implemented(self):
         runner = create_claude_runner(ClaudeRunnerConfig(spawn=mock_spawn(HAPPY_LINES)))
         session = runner.start("hello")
 
-        with pytest.raises(RuntimeError, match="not yet supported"):
+        with pytest.raises(NotImplementedError, match="not yet supported"):
             session.send("test")
 
         # Drain to avoid resource leak.
@@ -401,21 +441,25 @@ class TestStart:
 
     async def test_session_id_fallback(self):
         lines = [
-            json.dumps({
-                "type": "system",
-                "subtype": "init",
-                "session_id": "sess-from-init",
-                "model": "claude-sonnet-4-6",
-            }),
-            json.dumps({
-                "type": "result",
-                "subtype": "success",
-                "result": "done",
-                "is_error": False,
-                "total_cost_usd": 0.01,
-                "duration_ms": 100,
-                "usage": {"input_tokens": 10, "output_tokens": 5},
-            }),
+            json.dumps(
+                {
+                    "type": "system",
+                    "subtype": "init",
+                    "session_id": "sess-from-init",
+                    "model": "claude-sonnet-4-6",
+                }
+            ),
+            json.dumps(
+                {
+                    "type": "result",
+                    "subtype": "success",
+                    "result": "done",
+                    "is_error": False,
+                    "total_cost_usd": 0.01,
+                    "duration_ms": 100,
+                    "usage": {"input_tokens": 10, "output_tokens": 5},
+                }
+            ),
         ]
         runner = create_claude_runner(ClaudeRunnerConfig(spawn=mock_spawn(lines)))
         session = runner.start("hello")
@@ -432,7 +476,7 @@ class TestStart:
 
         session = runner.start(
             "test callback",
-            ClaudeRunOptions(on_message=lambda m: callback_messages.append(m)),
+            on_message=lambda m: callback_messages.append(m),
         )
 
         messages: list[Message] = []
@@ -442,3 +486,93 @@ class TestStart:
         assert len(callback_messages) == len(messages)
         for cb, ch in zip(callback_messages, messages):
             assert cb.type == ch.type
+
+
+class TestMessageAccessors:
+    """Tests for the typed accessors on Message."""
+
+    def test_text_from_assistant(self):
+        raw = json.dumps(
+            {
+                "type": "assistant",
+                "message": {
+                    "model": "claude-sonnet-4-6",
+                    "id": "msg_01",
+                    "content": [{"type": "text", "text": "Hello world"}],
+                },
+            }
+        )
+        msg = Message(type="assistant", raw=raw)
+        assert msg.text() == "Hello world"
+
+    def test_text_from_result(self):
+        raw = json.dumps({"type": "result", "result": "The answer"})
+        msg = Message(type="result", raw=raw)
+        assert msg.text() == "The answer"
+
+    def test_text_from_stream_event_delta(self):
+        raw = json.dumps(
+            {
+                "type": "stream_event",
+                "event": {
+                    "type": "content_block_delta",
+                    "index": 0,
+                    "delta": {"type": "text_delta", "text": "chunk"},
+                },
+            }
+        )
+        msg = Message(type="assistant", raw=raw)
+        assert msg.text() == "chunk"
+
+    def test_thinking_from_assistant(self):
+        raw = json.dumps(
+            {
+                "type": "assistant",
+                "message": {
+                    "model": "m",
+                    "id": "id",
+                    "content": [{"type": "thinking", "thinking": "Let me think..."}],
+                },
+            }
+        )
+        msg = Message(type="assistant", raw=raw)
+        assert msg.thinking() == "Let me think..."
+
+    def test_tool_name_and_input(self):
+        raw = json.dumps(
+            {
+                "type": "assistant",
+                "message": {
+                    "model": "m",
+                    "id": "id",
+                    "content": [{"type": "tool_use", "name": "Read", "input": {"path": "/tmp"}}],
+                },
+            }
+        )
+        msg = Message(type="assistant", raw=raw)
+        assert msg.tool_name() == "Read"
+        assert msg.tool_input() == {"path": "/tmp"}
+
+    def test_tool_output(self):
+        raw = json.dumps(
+            {
+                "type": "user",
+                "content": [{"type": "tool_result", "content": "file contents here"}],
+            }
+        )
+        msg = Message(type="user", raw=raw)
+        assert msg.tool_output() == "file contents here"
+
+    def test_no_text_returns_none(self):
+        raw = json.dumps({"type": "system", "subtype": "init"})
+        msg = Message(type="system", raw=raw)
+        assert msg.text() is None
+
+    def test_parsed_cache(self):
+        raw = json.dumps({"type": "result", "result": "cached"})
+        msg = Message(type="result", raw=raw)
+        # First call parses.
+        assert msg.text() == "cached"
+        # Second call uses cache (same _parsed dict).
+        assert msg._parsed is not None
+        assert msg.text() == "cached"

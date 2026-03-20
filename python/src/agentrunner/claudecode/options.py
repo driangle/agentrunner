@@ -6,7 +6,7 @@ import asyncio
 from dataclasses import dataclass
 from typing import Protocol
 
-from ..types import OnMessageFn, RunOptions
+from ..types import RunOptions
 
 
 class Logger(Protocol):
@@ -50,4 +50,3 @@ class ClaudeRunOptions(RunOptions):
     continue_session: bool = False
     session_id: str | None = None
     include_partial_messages: bool = False
-    on_message: OnMessageFn | None = None

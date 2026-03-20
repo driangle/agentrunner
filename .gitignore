@@ -1,6 +1,8 @@
 settings.local.json
 node_modules
 dist
+__pycache__/
+*.pyc
 
 # Compiled Go binaries
 examples/go/claudecode/claudecode

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import os
-from collections.abc import AsyncIterable
+from collections.abc import AsyncIterator
 from typing import Any
 
 from ..errors import (
@@ -14,17 +14,22 @@ from ..errors import (
     NotFoundError,
     TimeoutError,
 )
-from ..types import Message, Result
+from ..types import Message, OnMessageFn, Result
 from .args import build_args
 from .mapping import map_message_type, map_result
 from .options import ClaudeRunnerConfig, ClaudeRunOptions, SpawnFn
 from .parser import parse
 from .process import collect_error_detail, log_cmd, resolve_spawn
 from .types import StreamMessage
+from .version import check_version
 
 
 class ClaudeSession:
-    """Session encapsulates a running Claude Code agent process."""
+    """Session encapsulates a running Claude Code agent process.
+
+    Supports ``async for msg in session`` to iterate messages,
+    and ``await session.result`` to get the final result.
+    """
 
     def __init__(
         self,
@@ -33,14 +38,16 @@ class ClaudeSession:
         binary: str,
         prompt: str,
         options: ClaudeRunOptions,
+        on_message: OnMessageFn | None = None,
     ) -> None:
         self._config = config
         self._spawn_fn = spawn_fn
         self._binary = binary
         self._prompt = prompt
         self._options = options
+        self._on_message = on_message
 
-        self._loop = asyncio.get_event_loop()
+        self._loop = asyncio.get_running_loop()
         self._queue: asyncio.Queue[Message | None] = asyncio.Queue()
         self._result_future: asyncio.Future[Result] = self._loop.create_future()
         self._process: asyncio.subprocess.Process | None = None
@@ -76,12 +83,10 @@ class ClaudeSession:
             await self._queue.put(None)
             return
 
-        # Set up timeout.
+        # Set up timeout (options.timeout is in seconds).
         timeout_handle: asyncio.TimerHandle | None = None
         if self._options.timeout is not None and self._options.timeout > 0:
-            timeout_handle = self._loop.call_later(
-                self._options.timeout / 1000.0, self._on_timeout
-            )
+            timeout_handle = self._loop.call_later(self._options.timeout, self._on_timeout)
 
         init_session_id = ""
         result_msg: StreamMessage | None = None
@@ -113,8 +118,8 @@ class ClaudeSession:
 
                 msg = Message(type=map_message_type(parsed.type), raw=line)
 
-                if self._options.on_message:
-                    self._options.on_message(msg)
+                if self._on_message:
+                    self._on_message(msg)
 
                 await self._queue.put(msg)
 
@@ -174,11 +179,14 @@ class ClaudeSession:
             except ProcessLookupError:
                 pass
 
-    @property
-    def messages(self) -> AsyncIterable[Message]:
+    def __aiter__(self) -> AsyncIterator[Message]:
         return self._message_iter()
 
-    async def _message_iter(self) -> AsyncIterable[Message]:
+    @property
+    def messages(self) -> AsyncIterator[Message]:
+        return self._message_iter()
+
+    async def _message_iter(self) -> AsyncIterator[Message]:
         while True:
             msg = await self._queue.get()
             if msg is None:
@@ -198,7 +206,7 @@ class ClaudeSession:
                 pass
 
     def send(self, input: Any) -> None:
-        raise RuntimeError("not yet supported")
+        raise NotImplementedError("send is not yet supported")
 
 
 class ClaudeRunner:
@@ -207,9 +215,21 @@ class ClaudeRunner:
     def __init__(self, config: ClaudeRunnerConfig) -> None:
         self._config = config
         self._spawn_fn, self._binary = resolve_spawn(config)
+        self._version_checked = False
+
+    async def _ensure_version(self) -> None:
+        """Check the CLI version once per runner instance."""
+        if self._version_checked or self._config.spawn is not None:
+            # Skip version check when using injected spawn (tests).
+            return
+        await check_version(self._binary)
+        self._version_checked = True
 
     def start(
-        self, prompt: str, options: ClaudeRunOptions | None = None
+        self,
+        prompt: str,
+        options: ClaudeRunOptions | None = None,
+        on_message: OnMessageFn | None = None,
     ) -> ClaudeSession:
         return ClaudeSession(
             self._config,
@@ -217,25 +237,29 @@ class ClaudeRunner:
             self._binary,
             prompt,
             options or ClaudeRunOptions(),
+            on_message=on_message,
         )
 
     async def run(
-        self, prompt: str, options: ClaudeRunOptions | None = None
+        self,
+        prompt: str,
+        options: ClaudeRunOptions | None = None,
+        on_message: OnMessageFn | None = None,
     ) -> Result:
-        session = self.start(prompt, options)
+        await self._ensure_version()
+        session = self.start(prompt, options, on_message=on_message)
         async for _msg in session.messages:
             pass
         return await session.result
 
     async def run_stream(
-        self, prompt: str, options: ClaudeRunOptions | None = None
-    ) -> AsyncIterable[Message]:
-        return self._run_stream_impl(prompt, options)
-
-    async def _run_stream_impl(
-        self, prompt: str, options: ClaudeRunOptions | None = None
-    ) -> AsyncIterable[Message]:
-        session = self.start(prompt, options)
+        self,
+        prompt: str,
+        options: ClaudeRunOptions | None = None,
+        on_message: OnMessageFn | None = None,
+    ) -> AsyncIterator[Message]:
+        await self._ensure_version()
+        session = self.start(prompt, options, on_message=on_message)
         async for msg in session.messages:
             yield msg
         # Propagate errors after stream is drained.
