@@ -200,9 +200,9 @@ func TestRunNotFound(t *testing.T) {
 
 func TestBuildArgsMinimal(t *testing.T) {
 	opts := &agentrunner.Options{}
-	args := buildArgs("hello world", opts, false)
+	args := buildArgs("hello world", opts)
 
-	expected := []string{"--print", "--output-format", "stream-json", "--", "hello world"}
+	expected := []string{"--print", "--output-format", "stream-json", "--verbose", "--", "hello world"}
 	if len(args) != len(expected) {
 		t.Fatalf("args = %v, want %v", args, expected)
 	}
@@ -221,7 +221,7 @@ func TestBuildArgsAllCommonOptions(t *testing.T) {
 		MaxTurns:           5,
 		SkipPermissions:    true,
 	}
-	args := buildArgs("test prompt", opts, true)
+	args := buildArgs("test prompt", opts)
 
 	mustContain := []string{
 		"--verbose",
@@ -254,7 +254,7 @@ func TestBuildArgsClaudeOptions(t *testing.T) {
 	WithMaxBudgetUSD(1.5)(opts)
 	WithResume("sess-123")(opts)
 
-	args := buildArgs("test", opts, false)
+	args := buildArgs("test", opts)
 	joined := strings.Join(args, " ")
 
 	mustContain := []string{
@@ -276,7 +276,7 @@ func TestBuildArgsClaudeOptions(t *testing.T) {
 func TestBuildArgsSessionID(t *testing.T) {
 	opts := &agentrunner.Options{}
 	WithSessionID("my-session-42")(opts)
-	args := buildArgs("test", opts, false)
+	args := buildArgs("test", opts)
 
 	joined := strings.Join(args, " ")
 	if !strings.Contains(joined, "--session-id my-session-42") {
@@ -287,7 +287,7 @@ func TestBuildArgsSessionID(t *testing.T) {
 func TestBuildArgsContinue(t *testing.T) {
 	opts := &agentrunner.Options{}
 	WithContinue()(opts)
-	args := buildArgs("test", opts, false)
+	args := buildArgs("test", opts)
 
 	found := false
 	for _, a := range args {
@@ -303,7 +303,7 @@ func TestBuildArgsContinue(t *testing.T) {
 func TestBuildArgsIncludePartialMessages(t *testing.T) {
 	opts := &agentrunner.Options{}
 	WithIncludePartialMessages()(opts)
-	args := buildArgs("test", opts, false)
+	args := buildArgs("test", opts)
 
 	found := false
 	for _, a := range args {

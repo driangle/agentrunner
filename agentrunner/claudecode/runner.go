@@ -146,7 +146,7 @@ func (r *Runner) Start(ctx context.Context, prompt string, opts ...agentrunner.O
 		return nil, err
 	}
 
-	args := buildArgs(prompt, &options, r.logger != nil)
+	args := buildArgs(prompt, &options)
 
 	cmdBuilder := r.cmdBuilder
 	if cmdBuilder == nil {
@@ -352,11 +352,9 @@ func mapMessageType(typ string) agentrunner.MessageType {
 	}
 }
 
-func buildArgs(prompt string, opts *agentrunner.Options, verbose bool) []string {
-	args := []string{"--print", "--output-format", "stream-json"}
-	if verbose {
-		args = append(args, "--verbose")
-	}
+func buildArgs(prompt string, opts *agentrunner.Options) []string {
+	// --verbose is required with --output-format stream-json.
+	args := []string{"--print", "--output-format", "stream-json", "--verbose"}
 
 	if opts.Model != "" {
 		args = append(args, "--model", opts.Model)
