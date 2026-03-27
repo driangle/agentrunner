@@ -4,6 +4,7 @@ export default defineConfig({
   title: "agentrunner",
   description:
     "Language-native libraries for programmatically invoking AI coding agents",
+  base: "/agentrunner/",
 
   themeConfig: {
     nav: [
