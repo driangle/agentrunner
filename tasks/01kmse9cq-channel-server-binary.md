@@ -1,7 +1,7 @@
 ---
 id: "01kmse9cq"
 title: "Channel server binary (Go MCP server over stdio)"
-status: pending
+status: completed
 priority: high
 effort: large
 parent: "01kma0s35"
@@ -39,14 +39,14 @@ ChannelMessage {
 
 ## Tasks
 
-- [ ] Create `cmd/agentrunner-channel/` Go binary with main entry point
-- [ ] Implement MCP protocol over stdio by hand (no MCP library imports — keep the binary lightweight). Reference: https://github.com/modelcontextprotocol/go-sdk for protocol details (JSON-RPC framing, capability negotiation, notification/tool schemas)
-- [ ] Handle `initialize` handshake, advertising `experimental: { 'claude/channel': {} }` capability and `tools` capability
-- [ ] Implement Unix socket listener (path from `AGENTRUNNER_CHANNEL_SOCK`)
-- [ ] Forward socket messages as `notifications/claude/channel` notifications with content + meta
-- [ ] Handle `tools/list` and `tools/call` JSON-RPC requests for the `reply` tool
-- [ ] Add `instructions` string telling Claude how to use the channel and reply tool
-- [ ] Unit tests for the channel server (JSON-RPC framing, notification encoding, tool dispatch)
+- [x] Create `cmd/agentrunner-channel/` Go binary with main entry point
+- [x] Implement MCP protocol over stdio by hand (no MCP library imports — keep the binary lightweight). Reference: https://github.com/modelcontextprotocol/go-sdk for protocol details (JSON-RPC framing, capability negotiation, notification/tool schemas)
+- [x] Handle `initialize` handshake, advertising `experimental: { 'claude/channel': {} }` capability and `tools` capability
+- [x] Implement Unix socket listener (path from `AGENTRUNNER_CHANNEL_SOCK`)
+- [x] Forward socket messages as `notifications/claude/channel` notifications with content + meta
+- [x] Handle `tools/list` and `tools/call` JSON-RPC requests for the `reply` tool
+- [x] Add `instructions` string telling Claude how to use the channel and reply tool
+- [x] Unit tests for the channel server (JSON-RPC framing, notification encoding, tool dispatch)
 
 ## Acceptance Criteria
 
