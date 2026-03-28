@@ -1,0 +1,10 @@
+{
+  "name": "@agentrunner/channel-linux-arm64",
+  "version": "0.1.0",
+  "description": "agentrunner-channel binary for Linux ARM64",
+  "os": ["linux"],
+  "cpu": ["arm64"],
+  "files": ["bin/agentrunner-channel"],
+  "preferUnplugged": true,
+  "license": "MIT"
+}

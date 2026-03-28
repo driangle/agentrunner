@@ -1,0 +1,10 @@
+{
+  "name": "@agentrunner/channel-darwin-arm64",
+  "version": "0.1.0",
+  "description": "agentrunner-channel binary for macOS ARM64",
+  "os": ["darwin"],
+  "cpu": ["arm64"],
+  "files": ["bin/agentrunner-channel"],
+  "preferUnplugged": true,
+  "license": "MIT"
+}

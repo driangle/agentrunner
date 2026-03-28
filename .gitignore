@@ -9,3 +9,7 @@ __pycache__/
 # Compiled Go binaries
 examples/go/claudecode/claudecode
 examples/go/ollama/ollama
+
+# Platform binaries (placed by CI before publishing)
+npm/*/bin/
+python/channel/src/agentrunner_channel/bin/

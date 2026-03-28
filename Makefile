@@ -1,4 +1,4 @@
-.PHONY: check check-go test-go lint-go build-go check-ts build-ts lint-ts test-ts check-python build-python lint-python test-python docs-dev docs-build
+.PHONY: check check-go test-go lint-go build-go check-ts build-ts lint-ts test-ts check-python build-python lint-python test-python docs-dev docs-build cross-compile clean
 
 # Top-level target: check all libraries.
 check: check-go check-ts check-python
@@ -41,6 +41,23 @@ lint-python:
 
 test-python:
 	cd python && python -m pytest
+
+# --- Cross-compilation ---
+
+CHANNEL_PLATFORMS := linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64
+
+cross-compile:
+	@mkdir -p dist
+	@for platform in $(CHANNEL_PLATFORMS); do \
+		os=$${platform%/*}; arch=$${platform#*/}; \
+		ext=""; [ "$$os" = "windows" ] && ext=".exe"; \
+		out="dist/agentrunner-channel-$${os}-$${arch}$${ext}"; \
+		echo "Building $$out..."; \
+		cd go && GOOS=$$os GOARCH=$$arch go build -o ../$$out -trimpath -ldflags="-s -w" ./cmd/agentrunner-channel && cd ..; \
+	done
+
+clean:
+	rm -rf dist
 
 # --- Docs ---
 

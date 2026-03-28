@@ -1,7 +1,7 @@
 ---
 id: "01kmse9da"
 title: "Channel server cross-compilation and distribution"
-status: pending
+status: completed
 priority: high
 effort: medium
 parent: "01kma0s35"
@@ -18,11 +18,11 @@ Set up cross-compilation of the `agentrunner-channel` binary for all supported p
 
 ## Tasks
 
-- [ ] Add Makefile targets for cross-compiling to linux/amd64, linux/arm64, darwin/amd64, darwin/arm64, windows/amd64
-- [ ] npm: platform-specific `optionalDependencies` packages (esbuild/turbo pattern)
-- [ ] PyPI: platform wheels with binary included
-- [ ] Go: `//go:embed` the binary or build as module dependency
-- [ ] Release automation: cross-compile and place binaries before publishing
+- [x] Add Makefile targets for cross-compiling to linux/amd64, linux/arm64, darwin/amd64, darwin/arm64, windows/amd64
+- [x] npm: platform-specific `optionalDependencies` packages (esbuild/turbo pattern)
+- [x] PyPI: platform wheels with binary included
+- [x] Go: `//go:embed` the binary or build as module dependency
+- [x] Release automation: cross-compile and place binaries before publishing
 
 ## Acceptance Criteria
 

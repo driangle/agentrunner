@@ -17,6 +17,10 @@
     "./ollama": {
       "types": "./dist/ollama/index.d.ts",
       "import": "./dist/ollama/index.js"
+    },
+    "./channel": {
+      "types": "./dist/channel/index.d.ts",
+      "import": "./dist/channel/index.js"
     }
   },
   "sideEffects": false,
@@ -38,6 +42,13 @@
     "typescript": "^5.7.0",
     "typescript-eslint": "^8.57.1",
     "vitest": "^3.0.0"
+  },
+  "optionalDependencies": {
+    "@agentrunner/channel-darwin-arm64": "0.1.0",
+    "@agentrunner/channel-darwin-x64": "0.1.0",
+    "@agentrunner/channel-linux-arm64": "0.1.0",
+    "@agentrunner/channel-linux-x64": "0.1.0",
+    "@agentrunner/channel-win32-x64": "0.1.0"
   },
   "engines": {
     "node": ">=18"

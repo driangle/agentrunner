@@ -1,0 +1,152 @@
+name: Publish Channel Binary
+
+on:
+  push:
+    tags:
+      - "channel/v*"
+
+jobs:
+  cross-compile:
+    name: Cross-compile binaries
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+
+      - name: Cross-compile all platforms
+        run: make cross-compile
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: channel-binaries
+          path: dist/
+
+  publish-npm:
+    name: Publish npm (${{ matrix.npm_pkg }})
+    needs: cross-compile
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - goos: darwin
+            goarch: arm64
+            npm_pkg: channel-darwin-arm64
+          - goos: darwin
+            goarch: amd64
+            npm_pkg: channel-darwin-x64
+          - goos: linux
+            goarch: arm64
+            npm_pkg: channel-linux-arm64
+          - goos: linux
+            goarch: amd64
+            npm_pkg: channel-linux-x64
+          - goos: windows
+            goarch: amd64
+            npm_pkg: channel-win32-x64
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: channel-binaries
+          path: dist/
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Place binary and publish
+        run: |
+          pkg_dir="npm/${{ matrix.npm_pkg }}"
+          mkdir -p "$pkg_dir/bin"
+          ext=""
+          [ "${{ matrix.goos }}" = "windows" ] && ext=".exe"
+          src="dist/agentrunner-channel-${{ matrix.goos }}-${{ matrix.goarch }}${ext}"
+          dst="$pkg_dir/bin/agentrunner-channel${ext}"
+          cp "$src" "$dst"
+          chmod +x "$dst"
+          cd "$pkg_dir"
+          npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  publish-pypi:
+    name: Publish PyPI (${{ matrix.wheel_tag }})
+    needs: cross-compile
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - goos: darwin
+            goarch: arm64
+            wheel_tag: macosx_11_0_arm64
+          - goos: darwin
+            goarch: amd64
+            wheel_tag: macosx_10_12_x86_64
+          - goos: linux
+            goarch: arm64
+            wheel_tag: manylinux_2_17_aarch64.manylinux2014_aarch64
+          - goos: linux
+            goarch: amd64
+            wheel_tag: manylinux_2_17_x86_64.manylinux2014_x86_64
+          - goos: windows
+            goarch: amd64
+            wheel_tag: win_amd64
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: channel-binaries
+          path: dist/
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Build and publish wheel
+        run: |
+          pip install build twine
+          ext=""
+          [ "${{ matrix.goos }}" = "windows" ] && ext=".exe"
+          mkdir -p python/channel/src/agentrunner_channel/bin
+          cp "dist/agentrunner-channel-${{ matrix.goos }}-${{ matrix.goarch }}${ext}" \
+             "python/channel/src/agentrunner_channel/bin/agentrunner-channel${ext}"
+          chmod +x "python/channel/src/agentrunner_channel/bin/agentrunner-channel${ext}"
+          cd python/channel
+          python -m build --wheel
+          # Rename wheel to platform-specific tag
+          for whl in dist/*.whl; do
+            new="$(echo "$whl" | sed "s/py3-none-any/py3-none-${{ matrix.wheel_tag }}/")"
+            mv "$whl" "$new"
+          done
+          twine upload dist/*.whl
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
+
+  github-release:
+    name: Create GitHub Release
+    needs: cross-compile
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: channel-binaries
+          path: dist/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: "Channel ${{ github.ref_name }}"
+          generate_release_notes: true
+          files: dist/*

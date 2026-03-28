@@ -2,7 +2,7 @@
 title: "Create Java agentrunner library"
 id: "01kkx3f6m"
 status: pending
-priority: high
+priority: low
 type: feature
 tags: ["java"]
 created: "2026-03-17"
