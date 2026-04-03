@@ -32,6 +32,12 @@ export interface ClaudeRunOptions extends RunOptions {
   /** Enable two-way channel communication via session.send(). */
   channelEnabled?: boolean;
 
+  /** File path for channel MCP server logs. Only used when channelEnabled is true. */
+  channelLogFile?: string;
+
+  /** Log level for channel MCP server ("debug" | "info" | "warn" | "error"). Defaults to "info". */
+  channelLogLevel?: "debug" | "info" | "warn" | "error";
+
   /** Bypass interactive permission prompts. */
   skipPermissions?: boolean;
 

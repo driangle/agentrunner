@@ -71,6 +71,20 @@ describe("buildArgs", () => {
     expect(args).toContain("--include-partial-messages");
   });
 
+  it("includes channel flag when channelEnabled", () => {
+    const args = buildArgs("test", { channelEnabled: true });
+    const joined = args.join(" ");
+    expect(joined).toContain(
+      "--dangerously-load-development-channels server:agentrunner-channel",
+    );
+  });
+
+  it("omits channel flag when channelEnabled is false", () => {
+    const args = buildArgs("test", {});
+    const joined = args.join(" ");
+    expect(joined).not.toContain("--dangerously-load-development-channels");
+  });
+
   it("omits zero/undefined optional values", () => {
     const args = buildArgs("test", {
       maxTurns: 0,

@@ -61,6 +61,12 @@ export function buildArgs(
   if (options.includePartialMessages) {
     args.push("--include-partial-messages");
   }
+  if (options.channelEnabled) {
+    args.push(
+      "--dangerously-load-development-channels",
+      "server:agentrunner-channel",
+    );
+  }
 
   args.push("--", prompt);
   return args;

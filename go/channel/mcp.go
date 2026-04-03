@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"sync"
 )
 
@@ -38,22 +39,28 @@ type Server struct {
 	writer   *bufio.Writer
 	outMu    sync.Mutex
 	sockPath string
+	log      *slog.Logger
 }
 
-// NewServer creates a new MCP channel server.
-func NewServer(sockPath string, in io.Reader, out io.Writer) *Server {
+// NewServer creates a new MCP channel server. If logger is nil, logging is disabled.
+func NewServer(sockPath string, in io.Reader, out io.Writer, logger *slog.Logger) *Server {
+	if logger == nil {
+		logger = slog.New(slog.NewTextHandler(io.Discard, nil))
+	}
 	scanner := bufio.NewScanner(in)
 	scanner.Buffer(make([]byte, 0, 64*1024), 1024*1024)
 	return &Server{
 		scanner:  scanner,
 		writer:   bufio.NewWriter(out),
 		sockPath: sockPath,
+		log:      logger,
 	}
 }
 
 // Run starts the MCP server. It blocks until stdin is closed, the context
 // is cancelled, or an unrecoverable error occurs.
 func (s *Server) Run(ctx context.Context) error {
+	s.log.Info("server starting", "sock_path", s.sockPath)
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -80,6 +87,7 @@ func (s *Server) Run(ctx context.Context) error {
 	err := s.readStdin(ctx)
 
 	// Stdin closed or error — shut everything down.
+	s.log.Info("server shutting down", "stdin_err", err, "sock_err", sockErr)
 	cancel()
 	wg.Wait()
 
@@ -99,13 +107,14 @@ func (s *Server) readStdin(ctx context.Context) error {
 		req, err := ReadRequest(s.scanner)
 		if err != nil {
 			if err == io.EOF {
+				s.log.Debug("stdin EOF")
 				return nil
 			}
-			// Log malformed input but keep reading.
-			fmt.Fprintf(io.Discard, "read error: %v\n", err)
+			s.log.Warn("read error, skipping", "error", err)
 			continue
 		}
 
+		s.log.Debug("received request", "method", req.Method, "id", string(req.ID))
 		if err := s.dispatch(req); err != nil {
 			return fmt.Errorf("dispatch %s: %w", req.Method, err)
 		}
@@ -116,8 +125,10 @@ func (s *Server) readStdin(ctx context.Context) error {
 func (s *Server) dispatch(req *Request) error {
 	switch req.Method {
 	case methodInitialize:
+		s.log.Info("MCP initialize handshake")
 		return s.handleInitialize(req)
 	case methodInitialized:
+		s.log.Info("MCP client initialized")
 		return nil // notification, no response
 	case methodToolsList:
 		return s.handleToolsList(req)
@@ -127,8 +138,10 @@ func (s *Server) dispatch(req *Request) error {
 		return s.writeResult(req.ID, map[string]any{})
 	default:
 		if req.IsNotification() {
-			return nil // ignore unknown notifications
+			s.log.Debug("ignoring unknown notification", "method", req.Method)
+			return nil
 		}
+		s.log.Warn("unknown method", "method", req.Method)
 		return s.writeError(req.ID, errCodeMethodNotFound, "method not found: "+req.Method)
 	}
 }
@@ -197,7 +210,9 @@ func (s *Server) handleToolsCall(req *Request) error {
 		return s.writeError(req.ID, errCodeInvalidParams, "invalid tool call params")
 	}
 
+	s.log.Info("tool call", "tool", params.Name, "args", string(params.Arguments))
 	if params.Name != "reply" {
+		s.log.Warn("unknown tool", "tool", params.Name)
 		return s.writeResult(req.ID, map[string]any{
 			"content": []map[string]any{{
 				"type": "text",
@@ -226,6 +241,11 @@ func (s *Server) forwardMessages(ctx context.Context, msgCh <-chan ChannelMessag
 			if !ok {
 				return
 			}
+			s.log.Info("forwarding channel message",
+				"source_id", msg.SourceID,
+				"source_name", msg.SourceName,
+				"content_len", len(msg.Content),
+			)
 			meta := map[string]any{
 				"source_id":   msg.SourceID,
 				"source_name": msg.SourceName,
@@ -242,7 +262,11 @@ func (s *Server) forwardMessages(ctx context.Context, msgCh <-chan ChannelMessag
 				},
 			}
 			// Best-effort write; if stdout is broken, readStdin will detect it.
-			WriteMessage(s.writer, &s.outMu, notif)
+			if err := WriteMessage(s.writer, &s.outMu, notif); err != nil {
+				s.log.Error("failed to forward channel message", "error", err)
+			} else {
+				s.log.Debug("channel notification sent")
+			}
 		case <-ctx.Done():
 			return
 		}

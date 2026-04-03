@@ -19,6 +19,7 @@ export default defineConfig({
         items: [
           { text: "Getting Started", link: "/guide/getting-started" },
           { text: "Runner Interface", link: "/guide/runner-interface" },
+          { text: "Channels", link: "/guide/channels" },
         ],
       },
       {

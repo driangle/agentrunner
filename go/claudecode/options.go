@@ -85,6 +85,25 @@ func WithChannelEnabled() agentrunner.Option {
 	}
 }
 
+// WithChannelLogFile sets the file path for channel MCP server logs.
+// Only used when channel is enabled.
+func WithChannelLogFile(path string) agentrunner.Option {
+	return func(o *agentrunner.Options) {
+		opts := getClaudeOpts(o)
+		opts.ChannelLogFile = path
+	}
+}
+
+// WithChannelLogLevel sets the log level for the channel MCP server.
+// Valid values: "debug", "info", "warn", "error". Defaults to "info".
+// Only used when channel is enabled.
+func WithChannelLogLevel(level string) agentrunner.Option {
+	return func(o *agentrunner.Options) {
+		opts := getClaudeOpts(o)
+		opts.ChannelLogLevel = level
+	}
+}
+
 // ClaudeOptions holds Claude Code-specific configuration that extends
 // the common Options.
 type ClaudeOptions struct {
@@ -118,6 +137,13 @@ type ClaudeOptions struct {
 	// ChannelEnabled enables two-way channel communication via the
 	// agentrunner-channel MCP server.
 	ChannelEnabled bool
+
+	// ChannelLogFile is the file path for channel MCP server logs.
+	ChannelLogFile string
+
+	// ChannelLogLevel is the log level for the channel MCP server
+	// ("debug", "info", "warn", "error"). Defaults to "info".
+	ChannelLogLevel string
 }
 
 // OnMessageFunc is a callback invoked for each streaming message.

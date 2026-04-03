@@ -114,9 +114,14 @@ await runner.run("prompt", {
   resume: "session-id",
   continueSession: true,
   includePartialMessages: true,
+  channelEnabled: true,
+  channelLogFile: "/tmp/channel.log",
+  channelLogLevel: "debug",
   onMessage: (msg) => console.log(msg.type),
 });
 ```
+
+See the [Channels guide](/guide/channels) for two-way communication details.
 
 ## Ollama Options
 

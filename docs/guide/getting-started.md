@@ -117,6 +117,7 @@ result = await session.result
 ## Next Steps
 
 - [Runner Interface](/guide/runner-interface) — understand the common interface all runners share
+- [Channels](/guide/channels) — two-way communication with running agents
 - [Go Library](/libraries/go) — Go-specific API reference
 - [TypeScript Library](/libraries/typescript) — TypeScript-specific API reference
 - [Python Library](/libraries/python) — Python-specific API reference

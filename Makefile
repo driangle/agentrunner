@@ -1,4 +1,4 @@
-.PHONY: check check-lite check-go test-go lint-go build-go check-ts build-ts lint-ts test-ts check-python build-python lint-python test-python docs-dev docs-build cross-compile clean
+.PHONY: check check-lite check-go test-go lint-go build-go check-ts build-ts lint-ts test-ts check-python build-python lint-python test-python docs-dev docs-build cross-compile clean install-channel
 
 # Top-level target: check all libraries.
 check: check-go check-ts check-python
@@ -44,6 +44,11 @@ lint-python:
 
 test-python:
 	cd python && python -m pytest
+
+# --- Channel binary ---
+
+install-channel:
+	cd go && go build -o /tmp/agentrunner-channel ./cmd/agentrunner-channel
 
 # --- Cross-compilation ---
 

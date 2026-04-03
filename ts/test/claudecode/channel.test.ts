@@ -201,7 +201,7 @@ describe("setupChannel", () => {
     );
 
     try {
-      const setup = setupChannel(userCfgPath);
+      const setup = setupChannel({ mcpConfig: userCfgPath });
       cleanups.push(setup.cleanup);
 
       const cfg = JSON.parse(readFileSync(setup.mcpConfigPath, "utf-8"));

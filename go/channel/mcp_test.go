@@ -5,6 +5,8 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"io"
+	"log/slog"
 	"net"
 	"strings"
 	"testing"
@@ -34,6 +36,7 @@ func newTestServer(t *testing.T, out *bytes.Buffer) *Server {
 	return &Server{
 		writer:   bufio.NewWriter(out),
 		sockPath: tempSockPath(t),
+		log:      slog.New(slog.NewTextHandler(io.Discard, nil)),
 	}
 }
 
@@ -282,6 +285,7 @@ func TestChannelNotificationViaSocket(t *testing.T) {
 	srv := &Server{
 		writer:   bufio.NewWriter(&out),
 		sockPath: sockPath,
+		log:      slog.New(slog.NewTextHandler(io.Discard, nil)),
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -392,7 +396,7 @@ func TestFullRunInitializeAndToolsList(t *testing.T) {
 	stdin.WriteByte('\n')
 
 	var stdout bytes.Buffer
-	srv := NewServer(sockPath, &stdin, &stdout)
+	srv := NewServer(sockPath, &stdin, &stdout, nil)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()

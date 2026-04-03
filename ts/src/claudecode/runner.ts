@@ -65,7 +65,11 @@ function start(
   // Channel setup: create socket, MCP config, resolve binary.
   let chSetup: ChannelSetup | undefined;
   if (options.channelEnabled) {
-    chSetup = setupChannel(options.mcpConfig);
+    chSetup = setupChannel({
+      mcpConfig: options.mcpConfig,
+      logFile: options.channelLogFile,
+      logLevel: options.channelLogLevel,
+    });
     options = { ...options, mcpConfig: chSetup.mcpConfigPath };
   }
 

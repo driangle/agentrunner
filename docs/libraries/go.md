@@ -109,7 +109,12 @@ claudecode.WithMaxBudgetUSD(1.0)
 claudecode.WithResume("session-id")
 claudecode.WithContinue()
 claudecode.WithIncludePartialMessages()
+claudecode.WithChannelEnabled()
+claudecode.WithChannelLogFile("/tmp/channel.log")
+claudecode.WithChannelLogLevel("debug")
 ```
+
+See the [Channels guide](/guide/channels) for two-way communication details.
 
 ## Ollama Options
 

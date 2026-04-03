@@ -36,32 +36,50 @@ export interface ChannelSetup {
   cleanup: () => void;
 }
 
+/** Options for configuring the channel MCP server. */
+export interface ChannelOptions {
+  /** Existing MCP config file path to merge with. */
+  mcpConfig?: string;
+  /** File path for channel server logs. */
+  logFile?: string;
+  /** Log level for the channel server. */
+  logLevel?: "debug" | "info" | "warn" | "error";
+}
+
 /**
  * Prepare the channel infrastructure for a Claude CLI invocation.
  * Resolves the binary, creates a temp directory with Unix socket path
  * and MCP config, and optionally merges with the user's existing config.
  */
-export function setupChannel(mcpConfig?: string): ChannelSetup {
+export function setupChannel(options: ChannelOptions = {}): ChannelSetup {
   const binPath = resolveChannelBinary();
 
   // Use /tmp for short socket paths (macOS has a 104-char limit).
   const tmpDir = mkdtempSync("/tmp/ar-ch-");
   const sockPath = join(tmpDir, "ch.sock");
 
+  const env: Record<string, string> = {
+    AGENTRUNNER_CHANNEL_SOCK: sockPath,
+  };
+  if (options.logFile) {
+    env.AGENTRUNNER_CHANNEL_LOG = options.logFile;
+  }
+  if (options.logLevel) {
+    env.AGENTRUNNER_CHANNEL_LOG_LEVEL = options.logLevel;
+  }
+
   const cfg: MCPConfig = {
     mcpServers: {
       "agentrunner-channel": {
         command: binPath,
-        env: {
-          AGENTRUNNER_CHANNEL_SOCK: sockPath,
-        },
+        env,
       },
     },
   };
 
   // Merge with user's MCP config if provided.
-  if (mcpConfig) {
-    const userData = readFileSync(mcpConfig, "utf-8");
+  if (options.mcpConfig) {
+    const userData = readFileSync(options.mcpConfig, "utf-8");
     const userCfg = JSON.parse(userData) as MCPConfig;
     for (const [k, v] of Object.entries(userCfg.mcpServers ?? {})) {
       if (k !== "agentrunner-channel") {
@@ -94,14 +112,15 @@ export async function sendMessage(
 
   // Retry on ENOENT — the MCP server may not have created the socket yet.
   const maxRetries = 10;
-  const retryDelayMs = 200;
+  const retryDelayMs = 500;
   for (let attempt = 0; ; attempt++) {
     try {
       await writeToSocket(sockPath, data + "\n");
       return;
     } catch (err: unknown) {
-      const isENOENT =
-        err instanceof Error && "code" in err && err.code === "ENOENT";
+      const code =
+        err instanceof Error ? (err as NodeJS.ErrnoException).code : undefined;
+      const isENOENT = code === "ENOENT";
       if (isENOENT && attempt < maxRetries - 1) {
         await new Promise((r) => setTimeout(r, retryDelayMs));
         continue;

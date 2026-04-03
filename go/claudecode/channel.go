@@ -47,13 +47,21 @@ func setupChannel(ctx context.Context, co *ClaudeOptions) (*channelSetup, error)
 
 	sockPath := filepath.Join(tmpDir, "ch.sock")
 
+	env := map[string]string{
+		"AGENTRUNNER_CHANNEL_SOCK": sockPath,
+	}
+	if co.ChannelLogFile != "" {
+		env["AGENTRUNNER_CHANNEL_LOG"] = co.ChannelLogFile
+	}
+	if co.ChannelLogLevel != "" {
+		env["AGENTRUNNER_CHANNEL_LOG_LEVEL"] = co.ChannelLogLevel
+	}
+
 	cfg := mcpConfig{
 		MCPServers: map[string]mcpServerConfig{
 			"agentrunner-channel": {
 				Command: binPath,
-				Env: map[string]string{
-					"AGENTRUNNER_CHANNEL_SOCK": sockPath,
-				},
+				Env:     env,
 			},
 		},
 	}

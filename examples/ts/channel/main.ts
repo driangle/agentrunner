@@ -71,7 +71,7 @@ async function main() {
     // Send a CI notification once the system init arrives.
     if (!sentNotification && msg.type === "system") {
       sentNotification = true;
-      // Small delay to let the MCP handshake complete.
+      // Longer delay to let the MCP handshake complete after system init.
       setTimeout(async () => {
         const notification: ChannelMessage = {
           content:
@@ -85,17 +85,21 @@ async function main() {
         console.log(`[Channel] sending CI notification: ${notification.sourceId}`);
         try {
           await session.send(notification);
+          console.log("[Channel] send succeeded");
         } catch (err) {
           console.error("[Channel] send error:", err);
         }
-      }, 500);
+      }, 5000);
     }
 
     switch (msg.type) {
       case "system": {
         const sys = msg.data as SystemStreamMessage;
+        const toolNames = (sys.tools as Array<{name?: string}> ?? [])
+          .map((t) => t.name)
+          .filter(Boolean);
         console.log(
-          `[System] model=${sys.model ?? "unknown"} session=${sys.session_id ?? ""}`,
+          `[System] model=${sys.model ?? "unknown"} session=${sys.session_id ?? ""} tools=${toolNames.length > 0 ? toolNames.join(",") : "none"}`,
         );
         break;
       }

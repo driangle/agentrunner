@@ -26,8 +26,10 @@ Session:
   messages → Stream<Message>   — iterable of messages as they arrive
   result   → Result            — blocks/resolves when the agent finishes
   abort()  → void              — terminates the agent process
-  send()   → error             — reserved for future write-side support
+  send()   → error             — send a message to the running agent (requires channelEnabled)
 ```
+
+See the [Channels guide](/guide/channels) for details on two-way communication.
 
 | Language   | Messages                  | Result                      | Abort             |
 |------------|---------------------------|-----------------------------|--------------------|

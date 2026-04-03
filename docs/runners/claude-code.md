@@ -24,6 +24,9 @@ The runner spawns `claude -p --output-format stream-json` as a subprocess and pa
 | `continue` | `bool` | Continue the most recent session |
 | `appendSystemPrompt` | `string` | Appended to the default system prompt |
 | `includePartialMessages` | `bool` | Stream partial/incremental messages |
+| `channelEnabled` | `bool` | Enable two-way [channel](/guide/channels) communication |
+| `channelLogFile` | `string` | File path for channel server logs |
+| `channelLogLevel` | `string` | Channel server log level (`debug`, `info`, `warn`, `error`) |
 
 ## Stream Message Types
 
@@ -34,6 +37,7 @@ The runner spawns `claude -p --output-format stream-json` as a subprocess and pa
 | `user` | Tool results |
 | `result` | Final result with cost, usage, duration |
 | `stream_event` | Raw API streaming events |
+| `channel_reply` | Reply from the agent to a [channel](/guide/channels) message |
 | `rate_limit_event` | Rate limit notifications |
 
 ## Examples
