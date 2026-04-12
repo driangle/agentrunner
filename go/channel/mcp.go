@@ -12,8 +12,13 @@ import (
 
 const (
 	protocolVersion = "2025-03-26"
-	serverName      = "agentrunner-channel"
-	serverVersion   = "0.1.0"
+	// ServerName is the exported MCP server name.
+	ServerName = "agentrunner-channel"
+	// ServerVersion is the exported MCP server version.
+	ServerVersion = "0.1.1"
+
+	serverName    = ServerName
+	serverVersion = ServerVersion
 
 	instructions = "Messages from external sources arrive via this channel as notifications. " +
 		"Each message has content and metadata (source_id, source_name, reply_to). " +

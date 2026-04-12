@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { resolveChannelBinary } from "../channel/binary.js";
 import type { AssistantStreamMessage, ContentBlock } from "./types.js";
 
-/** Message sent to or received from the channel. */
+/** [Experimental] Message sent to or received from the channel. */
 export interface ChannelMessage {
   /** Message body that Claude reads. */
   content: string;
@@ -47,7 +47,7 @@ export interface ChannelOptions {
 }
 
 /**
- * Prepare the channel infrastructure for a Claude CLI invocation.
+ * [Experimental] Prepare the channel infrastructure for a Claude CLI invocation.
  * Resolves the binary, creates a temp directory with Unix socket path
  * and MCP config, and optionally merges with the user's existing config.
  */
@@ -98,7 +98,7 @@ export function setupChannel(options: ChannelOptions = {}): ChannelSetup {
   };
 }
 
-/** Send a ChannelMessage to the channel server via Unix socket. */
+/** [Experimental] Send a ChannelMessage to the channel server via Unix socket. */
 export async function sendMessage(
   sockPath: string,
   msg: ChannelMessage,

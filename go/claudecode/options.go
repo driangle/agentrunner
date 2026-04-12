@@ -74,7 +74,7 @@ func WithIncludePartialMessages() agentrunner.Option {
 	}
 }
 
-// WithChannelEnabled enables two-way channel communication. When enabled,
+// WithChannelEnabled enables two-way channel communication (experimental). When enabled,
 // the runner automatically starts the agentrunner-channel MCP server and
 // wires it into the Claude CLI invocation. Use session.Send() to deliver
 // channel.ChannelMessage values to the agent.
@@ -135,7 +135,7 @@ type ClaudeOptions struct {
 	IncludePartialMessages bool
 
 	// ChannelEnabled enables two-way channel communication via the
-	// agentrunner-channel MCP server.
+	// agentrunner-channel MCP server (experimental).
 	ChannelEnabled bool
 
 	// ChannelLogFile is the file path for channel MCP server logs.

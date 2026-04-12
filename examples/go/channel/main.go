@@ -1,6 +1,12 @@
-// This example demonstrates two-way channel communication with Claude Code.
+// [Experimental] This example demonstrates two-way channel communication with Claude Code.
 // It starts a session with channels enabled, sends a message to Claude via
 // the channel, and prints any channel replies from the stream.
+//
+// IMPORTANT: The channels feature in Claude Code is gated behind a server-side
+// feature flag. In -p (print) mode — which agentrunner uses — this flag must be
+// enabled on your account. If the MCP server logs show "forwarding channel
+// message" but Claude never acts on it, the feature flag is likely not enabled.
+// See docs/guide/channels.md for details.
 //
 // Prerequisites:
 //   - Claude Code CLI installed (>= 1.0.12): https://docs.anthropic.com/en/docs/claude-code

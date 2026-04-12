@@ -29,7 +29,7 @@ export interface ClaudeRunnerConfig {
 
 /** Claude Code-specific options that extend the common RunOptions. */
 export interface ClaudeRunOptions extends RunOptions {
-  /** Enable two-way channel communication via session.send(). */
+  /** [Experimental] Enable two-way channel communication via session.send(). */
   channelEnabled?: boolean;
 
   /** File path for channel MCP server logs. Only used when channelEnabled is true. */
@@ -67,6 +67,9 @@ export interface ClaudeRunOptions extends RunOptions {
 
   /** Enable streaming of partial/incremental messages. */
   includePartialMessages?: boolean;
+
+  /** Path to a file where the CLI writes debug logs (--debug-file). */
+  debugFile?: string;
 
   /** Callback invoked for each streaming message. */
   onMessage?: OnMessageFn;

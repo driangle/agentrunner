@@ -23,7 +23,9 @@ export type {
   SpawnFn,
 } from "./options.js";
 
+/** @experimental Channel types and utilities — subject to change. */
 export type { ChannelMessage } from "./channel.js";
+/** @experimental Channel constants and helpers — subject to change. */
 export {
   CHANNEL_REPLY_TOOL_NAME,
   isChannelReply,

@@ -71,17 +71,26 @@ describe("buildArgs", () => {
     expect(args).toContain("--include-partial-messages");
   });
 
-  it("includes channel flag when channelEnabled", () => {
+  it("includes channel flags when channelEnabled", () => {
     const args = buildArgs("test", { channelEnabled: true });
     const joined = args.join(" ");
+    expect(joined).toContain("--channels server:agentrunner-channel");
     expect(joined).toContain(
       "--dangerously-load-development-channels server:agentrunner-channel",
     );
+    expect(joined).toContain("--strict-mcp-config");
   });
 
-  it("omits channel flag when channelEnabled is false", () => {
+  it("includes --debug-file when debugFile is set", () => {
+    const args = buildArgs("test", { debugFile: "/tmp/claude-debug.log" });
+    const joined = args.join(" ");
+    expect(joined).toContain("--debug-file /tmp/claude-debug.log");
+  });
+
+  it("omits channel flags when channelEnabled is false", () => {
     const args = buildArgs("test", {});
     const joined = args.join(" ");
+    expect(joined).not.toContain("--channels");
     expect(joined).not.toContain("--dangerously-load-development-channels");
   });
 

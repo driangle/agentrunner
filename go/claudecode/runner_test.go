@@ -611,8 +611,14 @@ func TestBuildArgsChannelEnabled(t *testing.T) {
 	args := buildArgs("test", opts)
 	joined := strings.Join(args, " ")
 
+	if !strings.Contains(joined, "--channels server:agentrunner-channel") {
+		t.Errorf("args missing --channels flag: %v", args)
+	}
 	if !strings.Contains(joined, "--dangerously-load-development-channels server:agentrunner-channel") {
-		t.Errorf("args missing channel flag: %v", args)
+		t.Errorf("args missing --dangerously-load-development-channels flag: %v", args)
+	}
+	if !strings.Contains(joined, "--strict-mcp-config") {
+		t.Errorf("args missing --strict-mcp-config flag: %v", args)
 	}
 }
 
@@ -621,6 +627,9 @@ func TestBuildArgsChannelDisabled(t *testing.T) {
 	args := buildArgs("test", opts)
 	joined := strings.Join(args, " ")
 
+	if strings.Contains(joined, "--channels") {
+		t.Errorf("unexpected --channels in args: %v", args)
+	}
 	if strings.Contains(joined, "--dangerously-load-development-channels") {
 		t.Errorf("unexpected --dangerously-load-development-channels in args: %v", args)
 	}

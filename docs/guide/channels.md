@@ -1,8 +1,12 @@
-# Channels
+# Channels (Experimental)
+
+::: warning Experimental
+The channels feature relies on a Claude Code server-side feature flag (`tengu_harbor`) that is not yet generally available. In `-p` (print/non-interactive) mode — which agentrunner uses — channels will silently fail unless this flag is enabled on your account. Channels work in interactive mode regardless of the flag. A future version will use `--input-format stream-json` to bypass this limitation. See [anthropics/claude-code#24594](https://github.com/anthropics/claude-code/issues/24594).
+:::
 
 Channels enable two-way communication with a running Claude Code session. While the agent is working, you can send it messages from external sources (CI notifications, webhook events, user input) and receive structured replies.
 
-## How It Works
+## How It Works (Experimental)
 
 When you enable channels, agentrunner:
 
@@ -17,7 +21,7 @@ Your code ──send()──► Unix socket ──► MCP server ──► Claud
 Your code ◄──stream── channel_reply ◄── reply tool ◄────┘
 ```
 
-## Enabling Channels
+## Enabling Channels (Experimental)
 
 ::: code-group
 
@@ -37,7 +41,7 @@ const session = runner.start("Review this PR", {
 
 :::
 
-## Sending Messages
+## Sending Messages (Experimental)
 
 Wait for the `system` init message before sending — this confirms the MCP server is connected.
 
@@ -83,7 +87,7 @@ for await (const msg of session.messages) {
 | `sourceName` | `string` | Human-readable origin (e.g. "GitHub Actions") |
 | `replyTo` | `string?` | Optional reference to a prior message's sourceId |
 
-## Receiving Replies
+## Receiving Replies (Experimental)
 
 When Claude replies to a channel message, it emits a `channel_reply` message in the stream:
 
@@ -117,7 +121,7 @@ for await (const msg of session.messages) {
 
 :::
 
-## Channel Server Logging
+## Channel Server Logging (Experimental)
 
 The channel MCP server runs as a child process of Claude Code. By default it produces no log output. To enable logging for debugging, specify a log file and level:
 
@@ -180,7 +184,15 @@ When running the channel binary directly (outside of agentrunner), logging is co
 | `AGENTRUNNER_CHANNEL_LOG` | File path to write logs to. No logging when unset. |
 | `AGENTRUNNER_CHANNEL_LOG_LEVEL` | Log level: `debug`, `info` (default), `warn`, `error`. |
 
-## Prerequisites
+## Known Limitation: Feature Flag in `-p` Mode
+
+The channels feature in Claude Code is gated behind a server-side feature flag (`tengu_harbor`). In **interactive mode**, `--dangerously-load-development-channels` bypasses this gate automatically. However, in **`-p` (print/non-interactive) mode** — which is what agentrunner uses — the bypass code path is skipped. This means channels currently only work in `-p` mode if the feature flag is enabled on your account.
+
+If channel messages are being forwarded by the MCP server (visible in channel logs) but Claude never acts on them, this is likely the cause. You can verify by running Claude in interactive mode with the same flags — if it works interactively but not with `-p`, the feature flag is not enabled.
+
+This limitation is in Claude Code itself, not in agentrunner. Check for updates to Claude Code that may remove this restriction.
+
+## Prerequisites (Experimental)
 
 The channel feature requires the `agentrunner-channel` binary. It is resolved in this order:
 
@@ -189,6 +201,6 @@ The channel feature requires the `agentrunner-channel` binary. It is resolved in
 3. System `PATH`
 4. Built from source into user cache (Go only)
 
-## Full Example
+## Full Example (Experimental)
 
 See [`examples/ts/channel/main.ts`](https://github.com/anthropics/agentrunner/blob/main/examples/ts/channel/main.ts) for a complete working example that sends a CI notification and prints Claude's reply.

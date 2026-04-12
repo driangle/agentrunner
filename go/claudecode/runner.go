@@ -403,7 +403,21 @@ func buildArgs(prompt string, opts *agentrunner.Options) []string {
 			args = append(args, "--include-partial-messages")
 		}
 		if co.ChannelEnabled {
-			args = append(args, "--dangerously-load-development-channels", "server:agentrunner-channel")
+			// --channels registers the MCP server as a channel source.
+			// --dangerously-load-development-channels marks it as a dev channel,
+			// bypassing the production allowlist.
+			// Both flags are required: --channels alone fails the allowlist,
+			// and --dangerously-load-development-channels alone is ignored in -p mode.
+			//
+			// NOTE: The channels feature is also gated behind a server-side feature
+			// flag in Claude Code. In -p mode the bypass that works in interactive
+			// mode is not applied, so channels only work if the flag is enabled on
+			// the user's account. See docs/guide/channels.md.
+			args = append(args,
+				"--channels", "server:agentrunner-channel",
+				"--dangerously-load-development-channels", "server:agentrunner-channel",
+				"--strict-mcp-config",
+			)
 		}
 	}
 
