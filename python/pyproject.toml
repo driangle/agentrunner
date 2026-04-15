@@ -3,9 +3,10 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "agentrunner"
+name = "driangle-agentrunner"
 version = "0.0.1"
 description = "Python library for programmatically invoking AI coding agents"
+readme = "README.md"
 requires-python = ">=3.11"
 license = "MIT"
 authors = [
