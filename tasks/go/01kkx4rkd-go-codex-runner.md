@@ -1,13 +1,14 @@
 ---
 title: "Implement Go Codex CLI runner"
 id: "01kkx4rkd"
-status: pending
+status: completed
 priority: medium
 type: feature
 tags: ["go", "codex"]
 created: "2026-03-17"
 parent: 01kkx3f5s
 dependencies: ["01kkx7v98"]
+completed_at: 2026-04-18
 ---
 
 # Implement Go Codex CLI runner
@@ -18,11 +19,11 @@ Implement a Codex CLI runner in Go that satisfies the common Runner interface. R
 
 ## Tasks
 
-- [ ] Research Codex CLI flags and output format (non-interactive/programmatic mode)
-- [ ] Define Codex-specific option extensions
-- [ ] Define Codex-specific message/output types
-- [ ] Implement `Run` and `RunStream` for the Codex CLI
-- [ ] Add tests with mock command builder
+- [x] Research Codex CLI flags and output format (non-interactive/programmatic mode)
+- [x] Define Codex-specific option extensions
+- [x] Define Codex-specific message/output types
+- [x] Implement `Run` and `RunStream` for the Codex CLI
+- [x] Add tests with mock command builder
 
 ## Acceptance Criteria
 
