@@ -6,6 +6,7 @@ priority: high
 type: feature
 tags: ["go", "claudecode", "mcp"]
 effort: large
+dependencies: ["01kpgs2q0"]
 created: "2026-04-18"
 ---
 
