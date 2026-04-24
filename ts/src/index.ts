@@ -33,4 +33,8 @@ export { createOllamaRunner } from "./ollama/runner.js";
 
 export type { OllamaRunnerConfig, OllamaRunOptions } from "./ollama/options.js";
 
+export { createCodexRunner } from "./codex/runner.js";
+
+export type { CodexRunnerConfig, CodexRunOptions } from "./codex/options.js";
+
 export type { ChannelMessage } from "./claudecode/channel.js";

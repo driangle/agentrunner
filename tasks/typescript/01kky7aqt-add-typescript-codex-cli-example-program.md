@@ -1,12 +1,13 @@
 ---
 title: "Add TypeScript Codex CLI example program"
 id: "01kky7aqt"
-status: pending
+status: completed
 priority: medium
 type: feature
 tags: ["typescript", "codex", "example"]
 dependencies: ["01kkx7v9v"]
 created: "2026-03-17"
+completed_at: 2026-04-24
 ---
 
 # Add TypeScript Codex CLI example program
@@ -17,9 +18,9 @@ Add a working example program that demonstrates how to use the TypeScript Codex 
 
 ## Tasks
 
-- [ ] Create `examples/ts/codex/main.ts` with a working example
-- [ ] Include `run` and `runStream` usage with async/await and async iterators
-- [ ] Add a `package.json` and `tsconfig.json` for the example
+- [x] Create `examples/ts/codex/main.ts` with a working example
+- [x] Include `run` and `runStream` usage with async/await and async iterators
+- [x] Add a `package.json` and `tsconfig.json` for the example
 
 ## Acceptance Criteria
 

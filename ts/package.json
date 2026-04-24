@@ -18,6 +18,10 @@
       "types": "./dist/ollama/index.d.ts",
       "import": "./dist/ollama/index.js"
     },
+    "./codex": {
+      "types": "./dist/codex/index.d.ts",
+      "import": "./dist/codex/index.js"
+    },
     "./channel": {
       "types": "./dist/channel/index.d.ts",
       "import": "./dist/channel/index.js"
