@@ -7,6 +7,8 @@ TypeScript library for programmatically invoking AI coding agents. Part of the [
 | Runner      | CLI Version | Status |
 | ----------- | ----------- | ------ |
 | Claude Code | >= 1.0.12   | ✅     |
+| Codex       | —           | ✅     |
+| Gemini      | —           | ✅     |
 | Ollama      | —           | ✅     |
 
 ## Installation
@@ -35,6 +37,34 @@ for await (const message of runner.runStream("Explain this codebase")) {
 }
 ```
 
+### Codex
+
+```typescript
+import { createCodexRunner } from "@driangle/agentrunner/codex";
+
+const runner = createCodexRunner();
+
+const result = await runner.run("Refactor this module", {
+  workingDir: "/path/to/project",
+  fullAuto: true,
+});
+console.log(result.text);
+```
+
+### Gemini
+
+```typescript
+import { createGeminiRunner } from "@driangle/agentrunner/gemini";
+
+const runner = createGeminiRunner();
+
+const result = await runner.run("What does this project do?", {
+  workingDir: "/path/to/project",
+  dangerouslySkipPermissions: true,
+});
+console.log(result.text);
+```
+
 ## API
 
 ### `createClaudeRunner(config?)`
@@ -46,6 +76,30 @@ Creates a runner for the Claude Code CLI.
 | Field    | Type      | Default    | Description                         |
 | -------- | --------- | ---------- | ----------------------------------- |
 | `binary` | `string`  | `"claude"` | CLI binary name or path             |
+| `spawn`  | `SpawnFn` | —          | Custom spawn function (for testing) |
+| `logger` | `Logger`  | —          | Logger for debug output (opt-in)    |
+
+### `createCodexRunner(config?)`
+
+Creates a runner for the Codex CLI.
+
+**Config options (`CodexRunnerConfig`):**
+
+| Field    | Type      | Default   | Description                         |
+| -------- | --------- | --------- | ----------------------------------- |
+| `binary` | `string`  | `"codex"` | CLI binary name or path             |
+| `spawn`  | `SpawnFn` | —         | Custom spawn function (for testing) |
+| `logger` | `Logger`  | —         | Logger for debug output (opt-in)    |
+
+### `createGeminiRunner(config?)`
+
+Creates a runner for the Gemini CLI.
+
+**Config options (`GeminiRunnerConfig`):**
+
+| Field    | Type      | Default    | Description                         |
+| -------- | --------- | ---------- | ----------------------------------- |
+| `binary` | `string`  | `"gemini"` | CLI binary name or path             |
 | `spawn`  | `SpawnFn` | —          | Custom spawn function (for testing) |
 | `logger` | `Logger`  | —          | Logger for debug output (opt-in)    |
 
@@ -113,6 +167,37 @@ Claude-specific options (`ClaudeRunOptions` extends `RunOptions`):
 | `includePartialMessages` | `boolean`  | Stream partial/incremental messages |
 | `onMessage`              | `function` | Callback for each streamed message  |
 
+Codex-specific options (`CodexRunOptions` extends `RunOptions`):
+
+| Field                        | Type       | Description                                                                |
+| ---------------------------- | ---------- | -------------------------------------------------------------------------- |
+| `sandbox`                    | `string`   | Sandbox policy: `"read-only"`, `"workspace-write"`, `"danger-full-access"` |
+| `approval`                   | `string`   | Approval policy: `"untrusted"`, `"on-request"`, `"never"`                  |
+| `outputSchema`               | `string`   | Path to JSON Schema for structured output                                  |
+| `images`                     | `string[]` | Image file paths for multimodal input                                      |
+| `profile`                    | `string`   | Named config profile from config.toml                                      |
+| `resume`                     | `string`   | Session ID to resume                                                       |
+| `search`                     | `boolean`  | Enable live web search                                                     |
+| `fullAuto`                   | `boolean`  | Auto-execute with workspace-write sandbox                                  |
+| `ephemeral`                  | `boolean`  | Run without persisting session files                                       |
+| `addDirs`                    | `string[]` | Additional writable directories                                            |
+| `dangerouslySkipPermissions` | `boolean`  | Bypass interactive permission prompts                                      |
+| `onMessage`                  | `function` | Callback for each streamed message                                         |
+
+Gemini-specific options (`GeminiRunOptions` extends `RunOptions`):
+
+| Field                        | Type       | Description                                                       |
+| ---------------------------- | ---------- | ----------------------------------------------------------------- |
+| `approvalMode`               | `string`   | Approval behavior: `"default"`, `"auto_edit"`, `"yolo"`, `"plan"` |
+| `sandbox`                    | `boolean`  | Enable sandbox mode                                               |
+| `extensions`                 | `string[]` | Extensions to use                                                 |
+| `allowedTools`               | `string[]` | Tools allowed without confirmation                                |
+| `resume`                     | `string`   | Session ID or `"latest"` to resume                                |
+| `includeDirs`                | `string[]` | Additional directories for workspace context                      |
+| `rawOutput`                  | `boolean`  | Disable output sanitization                                       |
+| `dangerouslySkipPermissions` | `boolean`  | Bypass permission prompts (maps to `--yolo`)                      |
+| `onMessage`                  | `function` | Callback for each streamed message                                |
+
 Ollama-specific options (`OllamaRunOptions` extends `RunOptions`):
 
 | Field         | Type       | Description                        |
@@ -174,6 +259,8 @@ The package uses subpath exports:
 ```typescript
 import { ... } from "@driangle/agentrunner";           // common types, errors
 import { ... } from "@driangle/agentrunner/claudecode"; // Claude Code runner
+import { ... } from "@driangle/agentrunner/codex";      // Codex CLI runner
+import { ... } from "@driangle/agentrunner/gemini";     // Gemini CLI runner
 import { ... } from "@driangle/agentrunner/ollama";     // Ollama runner
 ```
 
