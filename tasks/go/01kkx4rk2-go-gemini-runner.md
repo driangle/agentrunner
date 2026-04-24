@@ -1,13 +1,14 @@
 ---
 title: "Implement Go Gemini CLI runner"
 id: "01kkx4rk2"
-status: pending
+status: completed
 priority: medium
 type: feature
 tags: ["go", "gemini"]
 created: "2026-03-17"
 parent: 01kkx3f5s
 dependencies: ["01kkx7v98"]
+completed_at: 2026-04-24
 ---
 
 # Implement Go Gemini CLI runner
@@ -18,11 +19,11 @@ Implement a Gemini CLI runner in Go that satisfies the common Runner interface. 
 
 ## Tasks
 
-- [ ] Research Gemini CLI flags and output format (non-interactive/programmatic mode)
-- [ ] Define Gemini-specific option extensions
-- [ ] Define Gemini-specific message/output types
-- [ ] Implement `Run` and `RunStream` for the Gemini CLI
-- [ ] Add tests with mock command builder
+- [x] Research Gemini CLI flags and output format (non-interactive/programmatic mode)
+- [x] Define Gemini-specific option extensions
+- [x] Define Gemini-specific message/output types
+- [x] Implement `Run` and `RunStream` for the Gemini CLI
+- [x] Add tests with mock command builder
 
 ## Acceptance Criteria
 
