@@ -22,6 +22,10 @@
       "types": "./dist/codex/index.d.ts",
       "import": "./dist/codex/index.js"
     },
+    "./gemini": {
+      "types": "./dist/gemini/index.d.ts",
+      "import": "./dist/gemini/index.js"
+    },
     "./channel": {
       "types": "./dist/channel/index.d.ts",
       "import": "./dist/channel/index.js"

@@ -37,4 +37,8 @@ export { createCodexRunner } from "./codex/runner.js";
 
 export type { CodexRunnerConfig, CodexRunOptions } from "./codex/options.js";
 
+export { createGeminiRunner } from "./gemini/runner.js";
+
+export type { GeminiRunnerConfig, GeminiRunOptions } from "./gemini/options.js";
+
 export type { ChannelMessage } from "./claudecode/channel.js";

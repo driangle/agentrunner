@@ -1,13 +1,14 @@
 ---
 id: "01kkx7vaa"
 title: "Implement TypeScript Gemini CLI runner"
-status: pending
+status: completed
 priority: medium
 phase: typescript
 dependencies: ["01kkx7v98", "01kkx4rk2"]
 parent: 01kkx3f5h
 tags: ["typescript", "gemini"]
 created: 2026-03-17
+completed_at: 2026-04-24
 ---
 
 # Implement TypeScript Gemini CLI runner
@@ -18,10 +19,10 @@ Implement the Gemini CLI runner in TypeScript, following the Go Gemini implement
 
 ## Tasks
 
-- [ ] Define Gemini-specific option extensions and message types
-- [ ] Implement stream-json parser for Gemini output
-- [ ] Implement `run()` and `runStream()` for the Gemini CLI
-- [ ] Add tests with mock subprocess
+- [x] Define Gemini-specific option extensions and message types
+- [x] Implement stream-json parser for Gemini output
+- [x] Implement `run()` and `runStream()` for the Gemini CLI
+- [x] Add tests with mock subprocess
 
 ## Acceptance Criteria
 
