@@ -1,13 +1,14 @@
 ---
 title: "Create Go agentrunner library"
 id: "01kkx3f5s"
-status: pending
+status: completed
 priority: high
 type: feature
 tags: ["go"]
 created: "2026-03-17"
 phase: go
 effort: large
+completed_at: 2026-04-25
 ---
 
 # Create Go agentrunner library
@@ -18,13 +19,13 @@ Build the Go implementation of `agentrunner` in the `go/` directory. The library
 
 ## Tasks
 
-- [ ] Initialize the Go module (`go.mod`)
-- [ ] Define common Runner interface and shared types
-- [ ] Implement Claude Code runner
-- [ ] Implement Gemini CLI runner
-- [ ] Implement Codex CLI runner
-- [ ] Write tests
-- [ ] Add package README
+- [x] Initialize the Go module (`go.mod`)
+- [x] Define common Runner interface and shared types
+- [x] Implement Claude Code runner
+- [x] Implement Gemini CLI runner
+- [x] Implement Codex CLI runner
+- [x] Write tests
+- [x] Add package README
 
 ## Acceptance Criteria
 

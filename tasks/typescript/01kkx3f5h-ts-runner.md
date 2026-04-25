@@ -1,13 +1,14 @@
 ---
 title: "Create TypeScript agentrunner library"
 id: "01kkx3f5h"
-status: pending
+status: completed
 priority: high
 type: feature
 tags: ["typescript"]
 created: "2026-03-17"
 phase: typescript
 effort: large
+completed_at: 2026-04-25
 ---
 
 # Create TypeScript agentrunner library
