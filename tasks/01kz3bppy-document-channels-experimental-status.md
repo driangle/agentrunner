@@ -6,6 +6,7 @@ priority: medium
 type: chore
 tags: ["docs", "channel"]
 created: "2026-08-03"
+phase: critical-feedback
 ---
 
 # Document channels as experimental/account-gated; reassess vs. thinness

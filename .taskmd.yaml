@@ -18,3 +18,6 @@ phases:
   - id: java
     name: "Java"
     description: "Phase 4: Build the Java agentrunner library"
+  - id: critical-feedback
+    name: "Critical Feedback"
+    description: "Findings from the project critical evaluation: version-check correctness, cross-language consistency, and doc/reality reconciliation"

@@ -6,6 +6,7 @@ priority: high
 type: bug
 tags: ["typescript", "claudecode"]
 created: "2026-08-03"
+phase: critical-feedback
 ---
 
 # Add missing TypeScript runtime CLI version check

@@ -6,6 +6,7 @@ priority: high
 type: bug
 tags: ["go", "claudecode"]
 created: "2026-08-03"
+phase: critical-feedback
 ---
 
 # Fix Go Claude Code CLI version parser (falsely rejects 1.0.x)

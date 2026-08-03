@@ -6,6 +6,7 @@ priority: medium
 type: feature
 tags: ["foundation", "claudecode"]
 created: "2026-08-03"
+phase: critical-feedback
 ---
 
 # Implement a supported CLI version range (upper bound) or align docs

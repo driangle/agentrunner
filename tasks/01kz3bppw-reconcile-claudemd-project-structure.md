@@ -6,6 +6,7 @@ priority: medium
 type: chore
 tags: ["docs", "foundation"]
 created: "2026-08-03"
+phase: critical-feedback
 ---
 
 # Reconcile CLAUDE.md project structure with reality (Java)

@@ -6,6 +6,7 @@ priority: low
 type: chore
 tags: ["docs", "ollama"]
 created: "2026-08-03"
+phase: critical-feedback
 ---
 
 # Clarify version-check principle scope for HTTP runners (Ollama)

@@ -6,6 +6,7 @@ priority: low
 type: chore
 tags: ["go", "claudecode"]
 created: "2026-08-03"
+phase: critical-feedback
 dependencies: ["01kz3bppj"]
 ---
 
