@@ -397,6 +397,10 @@ func buildArgs(prompt string, opts *agentrunner.Options) []string {
 		if co.JSONSchema != "" {
 			args = append(args, "--json-schema", co.JSONSchema)
 		}
+		// Value may be a file path or a raw JSON string; the CLI disambiguates.
+		if co.Settings != "" {
+			args = append(args, "--settings", co.Settings)
+		}
 		if co.MaxBudgetUSD > 0 {
 			args = append(args, "--max-budget-usd", strconv.FormatFloat(co.MaxBudgetUSD, 'f', -1, 64))
 		}

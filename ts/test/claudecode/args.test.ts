@@ -71,6 +71,21 @@ describe("buildArgs", () => {
     expect(buildArgs("test", { tools: [] })).not.toContain("--tools");
   });
 
+  it("passes a settings file path through verbatim", () => {
+    const args = buildArgs("test", { settings: "/tmp/settings.json" });
+    expect(args[args.indexOf("--settings") + 1]).toBe("/tmp/settings.json");
+  });
+
+  it("passes inline settings JSON through verbatim", () => {
+    const json = `{"permissions":{"deny":["Bash"]}}`;
+    const args = buildArgs("test", { settings: json });
+    expect(args[args.indexOf("--settings") + 1]).toBe(json);
+  });
+
+  it("omits --settings when unset", () => {
+    expect(buildArgs("test", {})).not.toContain("--settings");
+  });
+
   it("includes --permission-mode when permissionMode is set", () => {
     const args = buildArgs("test", { permissionMode: "auto" });
     expect(args.join(" ")).toContain("--permission-mode auto");

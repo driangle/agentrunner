@@ -37,6 +37,11 @@ class ClaudeRunOptions(RunOptions):
     permission_mode: str | None = None
     mcp_config: str | None = None
     json_schema: str | None = None
+    # Additional settings for the run (--settings). May be a path to a settings
+    # JSON file or a raw JSON string; passed through verbatim, the CLI
+    # disambiguates. In non-interactive mode the CLI silently ignores settings
+    # that fail validation.
+    settings: str | None = None
     max_budget_usd: float | None = None
     resume: str | None = None
     continue_session: bool = False

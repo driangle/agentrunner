@@ -1,12 +1,13 @@
 ---
 id: "01m03h9c3"
 title: "Support --settings flag in Claude Code runners"
-status: pending
+status: completed
 priority: medium
 effort: medium
 dependencies: []
 tags: ["claudecode", "config"]
 created_at: 2026-08-16
+completed_at: 2026-08-16
 ---
 
 # Support --settings flag in Claude Code runners
@@ -40,11 +41,11 @@ configuration. See skival spec `docs/specs/tool-deny-enforcement.md` (task `01m0
 
 ## Tasks
 
-- [ ] Go: add `Settings` option + `WithSettings(...)` and emit `--settings <value>`
-- [ ] TypeScript: add the equivalent option and arg building
-- [ ] Python: add the equivalent option and arg building
-- [ ] Unit tests in each language's arg builder (path value, inline-JSON value, unset)
-- [ ] Document `--settings` (and the silent-validation caveat) in `CLAUDE.md`
+- [x] Go: add `Settings` option + `WithSettings(...)` and emit `--settings <value>`
+- [x] TypeScript: add the equivalent option and arg building
+- [x] Python: add the equivalent option and arg building
+- [x] Unit tests in each language's arg builder (path value, inline-JSON value, unset)
+- [x] Document `--settings` (and the silent-validation caveat) in `CLAUDE.md`
 
 ## Acceptance Criteria
 

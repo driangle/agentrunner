@@ -42,6 +42,9 @@ def build_args(prompt: str, options: ClaudeRunOptions | None = None) -> list[str
         args.extend(["--mcp-config", options.mcp_config])
     if options.json_schema:
         args.extend(["--json-schema", options.json_schema])
+    # Value may be a file path or a raw JSON string; the CLI disambiguates.
+    if options.settings:
+        args.extend(["--settings", options.settings])
     if options.max_budget_usd is not None and options.max_budget_usd > 0:
         args.extend(["--max-budget-usd", str(options.max_budget_usd)])
     if options.resume:

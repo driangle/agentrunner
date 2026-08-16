@@ -56,6 +56,10 @@ export function buildArgs(
   if (options.jsonSchema) {
     args.push("--json-schema", options.jsonSchema);
   }
+  // Value may be a file path or a raw JSON string; the CLI disambiguates.
+  if (options.settings) {
+    args.push("--settings", options.settings);
+  }
   if (options.maxBudgetUSD != null && options.maxBudgetUSD > 0) {
     args.push("--max-budget-usd", String(options.maxBudgetUSD));
   }

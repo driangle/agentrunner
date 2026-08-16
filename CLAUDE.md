@@ -87,6 +87,7 @@ Interacts via `claude -p` (print/non-interactive mode) with `--output-format str
 - `--max-budget-usd` — cost limit
 - `--continue` / `--resume` — session management
 - `--mcp-config` — MCP server configuration
+- `--settings <file-or-json>` — load additional settings for the run, given either as a path to a settings JSON file or as a raw JSON string. Libraries pass the value through verbatim; the CLI disambiguates. Caveat: in `-p`/non-interactive mode the CLI **silently ignores** settings that fail validation, so a malformed value produces no error — callers must not assume it will surface one.
 - `--json-schema` — structured output
 - `--include-partial-messages` — stream partial/incremental messages
 

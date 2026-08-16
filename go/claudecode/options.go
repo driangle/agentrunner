@@ -52,6 +52,19 @@ func WithJSONSchema(schema string) agentrunner.Option {
 	}
 }
 
+// WithSettings sets the --settings flag, which loads additional settings for
+// the run. The value may be a path to a settings JSON file or a raw JSON
+// string; it is passed through verbatim and the CLI disambiguates.
+//
+// Note: in non-interactive (-p) mode the CLI silently ignores settings that
+// fail validation, so a malformed value will not surface an error.
+func WithSettings(fileOrJSON string) agentrunner.Option {
+	return func(o *agentrunner.Options) {
+		opts := getClaudeOpts(o)
+		opts.Settings = fileOrJSON
+	}
+}
+
 // WithMaxBudgetUSD sets the cost limit for the invocation.
 func WithMaxBudgetUSD(budget float64) agentrunner.Option {
 	return func(o *agentrunner.Options) {
@@ -152,6 +165,12 @@ type ClaudeOptions struct {
 
 	// JSONSchema is a JSON Schema for structured output.
 	JSONSchema string
+
+	// Settings loads additional settings for the run (--settings). The value
+	// may be a path to a settings JSON file or a raw JSON string; it is passed
+	// through verbatim and the CLI disambiguates. In non-interactive mode the
+	// CLI silently ignores settings that fail validation.
+	Settings string
 
 	// MaxBudgetUSD sets a cost limit for the invocation.
 	MaxBudgetUSD float64

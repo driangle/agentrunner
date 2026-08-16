@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -672,6 +673,42 @@ func TestMessageAccessors(t *testing.T) {
 	_, ok = ParseMessage(wrongMsg)
 	if ok {
 		t.Error("ParseMessage returned true for wrong type")
+	}
+}
+
+// --- Settings tests ---
+
+func TestBuildArgsSettings(t *testing.T) {
+	tests := []struct {
+		name  string
+		value string
+	}{
+		{"file path", "/tmp/settings.json"},
+		{"inline JSON", `{"permissions":{"deny":["Bash"]}}`},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			opts := &agentrunner.Options{}
+			WithSettings(tt.value)(opts)
+			args := buildArgs("test", opts)
+
+			idx := slices.Index(args, "--settings")
+			if idx < 0 {
+				t.Fatalf("args missing --settings: %v", args)
+			}
+			// Passed through verbatim — the CLI disambiguates path vs JSON.
+			if args[idx+1] != tt.value {
+				t.Errorf("--settings = %q, want %q", args[idx+1], tt.value)
+			}
+		})
+	}
+}
+
+func TestBuildArgsSettingsOmittedWhenUnset(t *testing.T) {
+	args := buildArgs("test", &agentrunner.Options{})
+	if slices.Index(args, "--settings") >= 0 {
+		t.Errorf("unexpected --settings in args: %v", args)
 	}
 }
 

@@ -75,6 +75,16 @@ export interface ClaudeRunOptions extends RunOptions {
   /** JSON Schema for structured output. */
   jsonSchema?: string;
 
+  /**
+   * Additional settings for the run (--settings). May be a path to a settings
+   * JSON file or a raw JSON string — the value is passed through verbatim and
+   * the CLI disambiguates.
+   *
+   * Note: in non-interactive mode the CLI silently ignores settings that fail
+   * validation, so a malformed value will not surface an error.
+   */
+  settings?: string;
+
   /** Cost limit in USD. */
   maxBudgetUSD?: number;
 

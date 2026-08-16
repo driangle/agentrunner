@@ -71,6 +71,20 @@ class TestBuildArgs:
         assert "--tools" not in build_args("hello", ClaudeRunOptions())
         assert "--tools" not in build_args("hello", ClaudeRunOptions(tools=[]))
 
+    def test_settings_file_path(self):
+        opts = ClaudeRunOptions(settings="/tmp/settings.json")
+        args = build_args("hello", opts)
+        assert args[args.index("--settings") + 1] == "/tmp/settings.json"
+
+    def test_settings_inline_json(self):
+        raw = '{"permissions":{"deny":["Bash"]}}'
+        opts = ClaudeRunOptions(settings=raw)
+        args = build_args("hello", opts)
+        assert args[args.index("--settings") + 1] == raw
+
+    def test_settings_omitted_when_unset(self):
+        assert "--settings" not in build_args("hello", ClaudeRunOptions())
+
     def test_permission_mode(self):
         opts = ClaudeRunOptions(permission_mode="auto")
         args = build_args("hello", opts)

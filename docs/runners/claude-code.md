@@ -20,6 +20,7 @@ The runner spawns `claude -p --output-format stream-json` as a subprocess and pa
 | `tools` | `string[]` | Exclusive built-in tool whitelist (see below) |
 | `permissionMode` | `string` | Permission mode for the run (see below) |
 | `mcpConfig` | `string` | Path to MCP server configuration file |
+| `settings` | `string` | Additional settings: file path or inline JSON (see below) |
 | `jsonSchema` | `string` | JSON Schema for structured output |
 | `maxBudgetUSD` | `float` | Cost limit in USD |
 | `resume` | `string` | Session ID to resume |
@@ -164,6 +165,42 @@ const result = await runner.run("Draft a refactor", {
 ```python [Python]
 result = await runner.run("Draft a refactor", ClaudeRunOptions(
     permission_mode="plan",
+))
+```
+
+:::
+
+### Additional Settings
+
+`settings` maps to the CLI's `--settings` flag and loads extra configuration for a
+single run — permission blocks, hooks, env, and so on — without staging a whole
+`CLAUDE_CONFIG_DIR`. The value is either a path to a settings JSON file or a raw
+JSON string; it is passed through verbatim and the CLI disambiguates.
+
+::: warning
+In non-interactive (`-p`) mode the CLI **silently ignores** settings that fail
+validation — no error is raised and the run proceeds without them. Do not rely on a
+malformed path or JSON string surfacing an error; validate the value yourself if it
+matters.
+:::
+
+::: code-group
+
+```go [Go]
+result, err := runner.Run(ctx, "Audit this module",
+    claudecode.WithSettings(`{"permissions": {"deny": ["Bash"]}}`),
+)
+```
+
+```ts [TypeScript]
+const result = await runner.run("Audit this module", {
+  settings: `{"permissions": {"deny": ["Bash"]}}`,
+});
+```
+
+```python [Python]
+result = await runner.run("Audit this module", ClaudeRunOptions(
+    settings='{"permissions": {"deny": ["Bash"]}}',
 ))
 ```
 

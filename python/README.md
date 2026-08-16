@@ -91,6 +91,7 @@ Claude-specific options (`ClaudeRunOptions` extends `RunOptions`):
 | `allowed_tools`          | `list[str]` | Tools the agent may use            |
 | `disallowed_tools`       | `list[str]` | Tools the agent may not use        |
 | `permission_mode`        | `str`       | Permission mode (wins over `dangerously_skip_permissions`) |
+| `settings`               | `str`       | Additional settings: file path or inline JSON |
 | `mcp_config`             | `str`       | Path to MCP server config          |
 | `json_schema`            | `str`       | JSON Schema for structured output  |
 | `max_budget_usd`         | `float`     | Cost limit in USD                  |
