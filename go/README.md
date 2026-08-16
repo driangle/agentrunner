@@ -100,6 +100,7 @@ agentrunner.WithSkipPermissions()
 ```go
 claudecode.WithAllowedTools("Read", "Bash")
 claudecode.WithDisallowedTools("Write")
+claudecode.WithPermissionMode("plan")
 claudecode.WithMCPConfig("/path/to/mcp.json")
 claudecode.WithJSONSchema(`{"type": "object", "properties": {"answer": {"type": "string"}}}`)
 claudecode.WithMaxBudgetUSD(1.0)

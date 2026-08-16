@@ -71,6 +71,32 @@ describe("buildArgs", () => {
     expect(buildArgs("test", { tools: [] })).not.toContain("--tools");
   });
 
+  it("includes --permission-mode when permissionMode is set", () => {
+    const args = buildArgs("test", { permissionMode: "auto" });
+    expect(args.join(" ")).toContain("--permission-mode auto");
+  });
+
+  it("omits --permission-mode when unset", () => {
+    expect(buildArgs("test", {})).not.toContain("--permission-mode");
+  });
+
+  it("gives permissionMode precedence over dangerouslySkipPermissions", () => {
+    const args = buildArgs("test", {
+      permissionMode: "plan",
+      dangerouslySkipPermissions: true,
+    });
+    const joined = args.join(" ");
+    expect(joined).toContain("--permission-mode plan");
+    expect(joined).not.toContain("--dangerously-skip-permissions");
+  });
+
+  it("still passes --dangerously-skip-permissions when permissionMode is unset", () => {
+    const args = buildArgs("test", { dangerouslySkipPermissions: true });
+    const joined = args.join(" ");
+    expect(joined).toContain("--dangerously-skip-permissions");
+    expect(joined).not.toContain("--permission-mode");
+  });
+
   it("includes session-id", () => {
     const args = buildArgs("test", { sessionId: "my-session-42" });
     const joined = args.join(" ");

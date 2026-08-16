@@ -30,6 +30,11 @@ class ClaudeRunOptions(RunOptions):
     # denied at registration. Use [""] to disable all tools, ["default"] for
     # the full set, or explicit names. None leaves the CLI default.
     tools: list[str] | None = None
+    # Permission mode for the run (--permission-mode). Known modes: "default",
+    # "acceptEdits", "auto", "plan", "dontAsk", "bypassPermissions". Passed
+    # through as a plain string so new CLI modes work without a library change.
+    # When set, takes precedence over dangerously_skip_permissions.
+    permission_mode: str | None = None
     mcp_config: str | None = None
     json_schema: str | None = None
     max_budget_usd: float | None = None

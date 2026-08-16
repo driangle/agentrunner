@@ -41,6 +41,17 @@ export interface ClaudeRunOptions extends RunOptions {
   /** Bypass interactive permission prompts. */
   dangerouslySkipPermissions?: boolean;
 
+  /**
+   * Permission mode for the run (--permission-mode). Known modes:
+   * "default", "acceptEdits", "auto", "plan", "dontAsk", "bypassPermissions".
+   * Passed through as a plain string so new CLI modes work without a library
+   * change.
+   *
+   * When set, this takes precedence over `dangerouslySkipPermissions` — only
+   * `--permission-mode` is passed.
+   */
+  permissionMode?: string;
+
   /** Tools the agent may use. */
   allowedTools?: string[];
 

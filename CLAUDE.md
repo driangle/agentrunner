@@ -82,6 +82,7 @@ Interacts via `claude -p` (print/non-interactive mode) with `--output-format str
 - `--allowedTools` / `--disallowedTools` — tool permissions (pre-approval/denial; not exclusive)
 - `--tools` — exclusive built-in tool whitelist. Takes a single comma-separated value (not repeated flags). Replaces the built-in tool set, so unlisted built-ins are denied at registration, including built-ins added by future CLI versions. `""` disables all tools, `"default"` uses all tools. Independent of the permission system, so it composes with `--dangerously-skip-permissions`.
 - `--dangerously-skip-permissions` — skip permission prompts
+- `--permission-mode <mode>` — graduated permission mode. Known modes: `default`, `acceptEdits`, `auto`, `plan`, `dontAsk`, `bypassPermissions`. Libraries pass the value through as a plain string rather than a closed enum, so new CLI modes work without a library change. When both this and `--dangerously-skip-permissions` are requested, `--permission-mode` wins and the skip flag is omitted.
 - `--max-turns` — limit agentic turns
 - `--max-budget-usd` — cost limit
 - `--continue` / `--resume` — session management

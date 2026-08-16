@@ -71,6 +71,27 @@ class TestBuildArgs:
         assert "--tools" not in build_args("hello", ClaudeRunOptions())
         assert "--tools" not in build_args("hello", ClaudeRunOptions(tools=[]))
 
+    def test_permission_mode(self):
+        opts = ClaudeRunOptions(permission_mode="auto")
+        args = build_args("hello", opts)
+        assert "--permission-mode" in args
+        assert args[args.index("--permission-mode") + 1] == "auto"
+
+    def test_permission_mode_omitted_when_unset(self):
+        assert "--permission-mode" not in build_args("hello", ClaudeRunOptions())
+
+    def test_permission_mode_takes_precedence_over_skip_permissions(self):
+        opts = ClaudeRunOptions(permission_mode="plan", dangerously_skip_permissions=True)
+        args = build_args("hello", opts)
+        assert args[args.index("--permission-mode") + 1] == "plan"
+        assert "--dangerously-skip-permissions" not in args
+
+    def test_skip_permissions_still_passed_without_permission_mode(self):
+        opts = ClaudeRunOptions(dangerously_skip_permissions=True)
+        args = build_args("hello", opts)
+        assert "--dangerously-skip-permissions" in args
+        assert "--permission-mode" not in args
+
     def test_mcp_config(self):
         opts = ClaudeRunOptions(mcp_config="/path/to/config.json")
         args = build_args("hello", opts)

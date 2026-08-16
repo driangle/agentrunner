@@ -18,6 +18,7 @@ The runner spawns `claude -p --output-format stream-json` as a subprocess and pa
 | `allowedTools` | `string[]` | Tools the agent may use |
 | `disallowedTools` | `string[]` | Tools the agent may not use |
 | `tools` | `string[]` | Exclusive built-in tool whitelist (see below) |
+| `permissionMode` | `string` | Permission mode for the run (see below) |
 | `mcpConfig` | `string` | Path to MCP server configuration file |
 | `jsonSchema` | `string` | JSON Schema for structured output |
 | `maxBudgetUSD` | `float` | Cost limit in USD |
@@ -119,6 +120,50 @@ const result = await runner.run("Read the config file", {
 ```python [Python]
 result = await runner.run("Read the config file", ClaudeRunOptions(
     tools=["Read", "Grep"],
+))
+```
+
+:::
+
+### Permission Mode
+
+`dangerouslySkipPermissions` is all-or-nothing — it bypasses every prompt.
+`permissionMode` maps to the CLI's `--permission-mode` flag and selects a
+graduated mode instead. Known modes:
+
+| Mode | Behavior |
+|------|----------|
+| `default` | Prompt for permission on first use of each tool |
+| `acceptEdits` | Auto-accept file edits, prompt for everything else |
+| `auto` | Auto-approve without prompting |
+| `plan` | Plan only — no tool execution |
+| `dontAsk` | Never prompt; deny anything not pre-approved |
+| `bypassPermissions` | Bypass all permission checks |
+
+The value is passed through as a plain string rather than a closed enum, so new
+CLI modes work without a library upgrade.
+
+When both options are set, **`permissionMode` wins** and
+`--dangerously-skip-permissions` is omitted. Setting only
+`dangerouslySkipPermissions` still passes the skip flag as before.
+
+::: code-group
+
+```go [Go]
+result, err := runner.Run(ctx, "Draft a refactor",
+    claudecode.WithPermissionMode("plan"),
+)
+```
+
+```ts [TypeScript]
+const result = await runner.run("Draft a refactor", {
+  permissionMode: "plan",
+});
+```
+
+```python [Python]
+result = await runner.run("Draft a refactor", ClaudeRunOptions(
+    permission_mode="plan",
 ))
 ```
 

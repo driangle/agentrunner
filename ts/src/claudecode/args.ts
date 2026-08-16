@@ -25,7 +25,10 @@ export function buildArgs(
   if (options.maxTurns != null && options.maxTurns > 0) {
     args.push("--max-turns", String(options.maxTurns));
   }
-  if (options.dangerouslySkipPermissions) {
+  // permissionMode takes precedence over dangerouslySkipPermissions.
+  if (options.permissionMode) {
+    args.push("--permission-mode", options.permissionMode);
+  } else if (options.dangerouslySkipPermissions) {
     args.push("--dangerously-skip-permissions");
   }
 

@@ -154,18 +154,19 @@ Common options (all runners):
 
 Claude-specific options (`ClaudeRunOptions` extends `RunOptions`):
 
-| Field                    | Type       | Description                         |
-| ------------------------ | ---------- | ----------------------------------- |
-| `allowedTools`           | `string[]` | Tools the agent may use             |
-| `disallowedTools`        | `string[]` | Tools the agent may not use         |
-| `mcpConfig`              | `string`   | Path to MCP server config           |
-| `jsonSchema`             | `string`   | JSON Schema for structured output   |
-| `maxBudgetUSD`           | `number`   | Cost limit in USD                   |
-| `resume`                 | `string`   | Session ID to resume                |
-| `continueSession`        | `boolean`  | Continue most recent session        |
-| `sessionId`              | `string`   | Specific session ID                 |
-| `includePartialMessages` | `boolean`  | Stream partial/incremental messages |
-| `onMessage`              | `function` | Callback for each streamed message  |
+| Field                    | Type       | Description                                                          |
+| ------------------------ | ---------- | -------------------------------------------------------------------- |
+| `allowedTools`           | `string[]` | Tools the agent may use                                              |
+| `disallowedTools`        | `string[]` | Tools the agent may not use                                          |
+| `permissionMode`         | `string`   | Permission mode (takes precedence over `dangerouslySkipPermissions`) |
+| `mcpConfig`              | `string`   | Path to MCP server config                                            |
+| `jsonSchema`             | `string`   | JSON Schema for structured output                                    |
+| `maxBudgetUSD`           | `number`   | Cost limit in USD                                                    |
+| `resume`                 | `string`   | Session ID to resume                                                 |
+| `continueSession`        | `boolean`  | Continue most recent session                                         |
+| `sessionId`              | `string`   | Specific session ID                                                  |
+| `includePartialMessages` | `boolean`  | Stream partial/incremental messages                                  |
+| `onMessage`              | `function` | Callback for each streamed message                                   |
 
 Codex-specific options (`CodexRunOptions` extends `RunOptions`):
 

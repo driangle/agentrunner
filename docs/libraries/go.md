@@ -103,6 +103,7 @@ agentrunner.WithSkipPermissions()
 ```go
 claudecode.WithAllowedTools("Read", "Write", "Bash")
 claudecode.WithDisallowedTools("WebSearch")
+claudecode.WithPermissionMode("plan")
 claudecode.WithMCPConfig("/path/to/mcp.json")
 claudecode.WithJSONSchema(`{"type": "object", ...}`)
 claudecode.WithMaxBudgetUSD(1.0)

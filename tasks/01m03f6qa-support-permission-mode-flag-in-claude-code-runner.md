@@ -1,12 +1,13 @@
 ---
 id: "01m03f6qa"
 title: "Support --permission-mode flag in Claude Code runners"
-status: pending
+status: completed
 priority: medium
 effort: medium
 dependencies: []
 tags: ["claudecode", "permissions"]
 created_at: 2026-08-16
+completed_at: 2026-08-16
 ---
 
 # Support --permission-mode flag in Claude Code runners
@@ -42,12 +43,12 @@ set one. See skival spec `docs/specs/tool-deny-enforcement.md` (task `01m03awyn`
 
 ## Tasks
 
-- [ ] Go: add `PermissionMode` option + `WithPermissionMode(...)` and emit `--permission-mode`
-- [ ] TypeScript: add the equivalent option and arg building
-- [ ] Python: add the equivalent option and arg building
-- [ ] Define and test the interaction with `WithSkipPermissions()` (precedence or conflict error)
-- [ ] Unit tests in each language's arg builder (set / unset)
-- [ ] Document `--permission-mode` in `CLAUDE.md` under the Claude Code CLI flags section
+- [x] Go: add `PermissionMode` option + `WithPermissionMode(...)` and emit `--permission-mode` (already landed via task `01kpj3xkq`)
+- [x] TypeScript: add the equivalent option and arg building
+- [x] Python: add the equivalent option and arg building
+- [x] Define and test the interaction with `WithSkipPermissions()` — permission mode wins, skip flag omitted
+- [x] Unit tests in each language's arg builder (set / unset)
+- [x] Document `--permission-mode` in `CLAUDE.md` under the Claude Code CLI flags section
 
 ## Acceptance Criteria
 
