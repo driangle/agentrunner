@@ -17,6 +17,10 @@ Add support for `--input-format stream-json` as the primary transport for `sessi
 
 Reference: https://github.com/anthropics/claude-code/issues/24594
 
+## Consumers
+
+**VoxDev** (`../voxdev`) is a concrete consumer of this feature. Its coding worker answers a blocking `QUESTION` / `APPROVAL_REQUIRED` by injecting the user's spoken answer into the *live* run via `session.send()`. Without this, VoxDev must end the run and `--resume` the session per answer (a fresh turn per round-trip); see `../voxdev/docs/mvp.md` §4 "Coding worker: agentrunner" and its `question-approval-loop` task. The **TypeScript** implementation is the MVP-critical path for that consumer. This does not change the scope below — it records why the stdin transport (Route A) matters and why the flag-gated MCP path (`01kma0s35`) is insufficient for `-p` mode.
+
 ## Background
 
 The current channel architecture:
