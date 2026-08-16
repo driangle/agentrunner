@@ -24,7 +24,8 @@ import (
 var _ agentrunner.Runner = (*Runner)(nil)
 
 // MinCLIVersion is the minimum supported Claude Code CLI version.
-const MinCLIVersion = "1.0.12"
+// 2.1.0 is the first release that ships --tools (verified absent in 2.0.0).
+const MinCLIVersion = "2.1.0"
 
 // commandBuilder creates an *exec.Cmd for the given binary and arguments.
 // Inject a custom builder in tests to avoid spawning a real CLI process.
@@ -380,6 +381,10 @@ func buildArgs(prompt string, opts *agentrunner.Options) []string {
 	}
 
 	if co != nil {
+		// --tools takes a single comma-separated value, not repeated flags.
+		if len(co.Tools) > 0 {
+			args = append(args, "--tools", strings.Join(co.Tools, ","))
+		}
 		for _, t := range co.AllowedTools {
 			args = append(args, "--allowedTools", t)
 		}

@@ -6,13 +6,13 @@ Go library for programmatically invoking AI coding agents. Part of the [agentrun
 
 | Runner      | Status |
 |-------------|--------|
-| Claude Code | ✅ (CLI >= 1.0.12) |
+| Claude Code | ✅ (CLI >= 2.1.0) |
 | Ollama      | ✅ |
 
 ## Requirements
 
 - Go 1.22+
-- Claude Code CLI >= 1.0.12 (for Claude Code runner)
+- Claude Code CLI >= 2.1.0 (for Claude Code runner)
 - Ollama server running (for Ollama runner)
 
 ## Installation

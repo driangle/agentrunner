@@ -10,6 +10,24 @@ func WithAllowedTools(tools ...string) agentrunner.Option {
 	}
 }
 
+// WithTools restricts the session to an exclusive set of built-in tools
+// (--tools). Unlike WithAllowedTools, which only pre-approves tools and leaves
+// unlisted built-ins available, --tools replaces the built-in tool set, so every
+// unlisted built-in is denied at registration — including built-ins added by
+// future CLI versions.
+//
+// Pass "" to disable all tools, "default" to use all tools, or explicit tool
+// names (e.g. WithTools("Read", "Grep")). Calling WithTools with no arguments
+// leaves the CLI default in place.
+//
+// Requires Claude Code CLI >= MinCLIVersion.
+func WithTools(tools ...string) agentrunner.Option {
+	return func(o *agentrunner.Options) {
+		opts := getClaudeOpts(o)
+		opts.Tools = tools
+	}
+}
+
 // WithDisallowedTools specifies which tools the agent may not use.
 func WithDisallowedTools(tools ...string) agentrunner.Option {
 	return func(o *agentrunner.Options) {
@@ -122,6 +140,12 @@ type ClaudeOptions struct {
 
 	// DisallowedTools specifies which tools the agent may not use.
 	DisallowedTools []string
+
+	// Tools is an exclusive whitelist of built-in tools (--tools). When set,
+	// unlisted built-ins are denied at registration. A single element of ""
+	// disables all tools; "default" restores the full built-in set. Nil or
+	// empty leaves the CLI default.
+	Tools []string
 
 	// MCPConfig is the path to the MCP server configuration file.
 	MCPConfig string

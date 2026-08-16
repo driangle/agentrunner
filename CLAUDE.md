@@ -79,7 +79,8 @@ Interacts via `claude -p` (print/non-interactive mode) with `--output-format str
 - `--output-format json` — single JSON result
 - `--model` — model selection
 - `--system-prompt` / `--append-system-prompt` — prompt customization
-- `--allowedTools` / `--disallowedTools` — tool permissions
+- `--allowedTools` / `--disallowedTools` — tool permissions (pre-approval/denial; not exclusive)
+- `--tools` — exclusive built-in tool whitelist. Takes a single comma-separated value (not repeated flags). Replaces the built-in tool set, so unlisted built-ins are denied at registration, including built-ins added by future CLI versions. `""` disables all tools, `"default"` uses all tools. Independent of the permission system, so it composes with `--dangerously-skip-permissions`.
 - `--dangerously-skip-permissions` — skip permission prompts
 - `--max-turns` — limit agentic turns
 - `--max-budget-usd` — cost limit

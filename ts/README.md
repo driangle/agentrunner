@@ -6,7 +6,7 @@ TypeScript library for programmatically invoking AI coding agents. Part of the [
 
 | Runner      | CLI Version | Status |
 | ----------- | ----------- | ------ |
-| Claude Code | >= 1.0.12   | ✅     |
+| Claude Code | >= 2.1.0    | ✅     |
 | Codex       | —           | ✅     |
 | Gemini      | —           | ✅     |
 | Ollama      | —           | ✅     |

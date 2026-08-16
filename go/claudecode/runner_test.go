@@ -291,6 +291,79 @@ func TestBuildArgsClaudeOptions(t *testing.T) {
 	}
 }
 
+func TestBuildArgsTools(t *testing.T) {
+	tests := []struct {
+		name  string
+		apply func(*agentrunner.Options)
+		want  []string // exact --tools flag pair, or nil when it must be absent
+	}{
+		{
+			name:  "exclusive whitelist joined into one value",
+			apply: WithTools("Read", "Grep"),
+			want:  []string{"--tools", "Read,Grep"},
+		},
+		{
+			name:  "empty string disables all tools",
+			apply: WithTools(""),
+			want:  []string{"--tools", ""},
+		},
+		{
+			name:  "default keyword restores full set",
+			apply: WithTools("default"),
+			want:  []string{"--tools", "default"},
+		},
+		{
+			name:  "no arguments leaves CLI default",
+			apply: WithTools(),
+			want:  nil,
+		},
+		{
+			name:  "unset leaves CLI default",
+			apply: func(*agentrunner.Options) {},
+			want:  nil,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			opts := &agentrunner.Options{}
+			tt.apply(opts)
+			args := buildArgs("test", opts)
+
+			idx := -1
+			for i, a := range args {
+				if a == "--tools" {
+					idx = i
+					break
+				}
+			}
+
+			if tt.want == nil {
+				if idx != -1 {
+					t.Fatalf("expected no --tools flag, got %v", args)
+				}
+				return
+			}
+			if idx == -1 {
+				t.Fatalf("expected --tools flag, got %v", args)
+			}
+			if got := args[idx+1]; got != tt.want[1] {
+				t.Errorf("--tools value = %q, want %q", got, tt.want[1])
+			}
+			// A single value, not repeated flags.
+			count := 0
+			for _, a := range args {
+				if a == "--tools" {
+					count++
+				}
+			}
+			if count != 1 {
+				t.Errorf("--tools appeared %d times, want 1: %v", count, args)
+			}
+		})
+	}
+}
+
 func TestBuildArgsSessionID(t *testing.T) {
 	opts := &agentrunner.Options{}
 	WithSessionID("my-session-42")(opts)

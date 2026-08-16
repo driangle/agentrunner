@@ -4,7 +4,7 @@ The Claude Code runner invokes the `claude` CLI in non-interactive print mode (`
 
 ## Requirements
 
-- Claude Code CLI >= 1.0.12
+- Claude Code CLI >= 2.1.0
 - The `claude` binary must be on your `PATH` (or specify a custom path)
 
 ## How It Works
@@ -17,6 +17,7 @@ The runner spawns `claude -p --output-format stream-json` as a subprocess and pa
 |--------|------|-------------|
 | `allowedTools` | `string[]` | Tools the agent may use |
 | `disallowedTools` | `string[]` | Tools the agent may not use |
+| `tools` | `string[]` | Exclusive built-in tool whitelist (see below) |
 | `mcpConfig` | `string` | Path to MCP server configuration file |
 | `jsonSchema` | `string` | JSON Schema for structured output |
 | `maxBudgetUSD` | `float` | Cost limit in USD |
@@ -85,6 +86,39 @@ const result = await runner.run("Read the config file", {
 result = await runner.run("Read the config file", ClaudeRunOptions(
     allowed_tools=["Read"],
     disallowed_tools=["Write", "Bash"],
+))
+```
+
+:::
+
+### Exclusive Tool Whitelist
+
+`allowedTools` only *pre-approves* tools — unlisted built-ins remain registered and
+can still execute. `tools` maps to the CLI's `--tools` flag, which **replaces** the
+built-in tool set: every unlisted built-in is denied at registration, including
+built-ins introduced by future CLI versions. It acts independently of the permission
+system, so denied tools stay denied even with `dangerouslySkipPermissions`.
+
+Pass `""` to disable all tools, or `"default"` to restore the full built-in set.
+Omitting the option leaves the CLI default in place.
+
+::: code-group
+
+```go [Go]
+result, err := runner.Run(ctx, "Read the config file",
+    claudecode.WithTools("Read", "Grep"),
+)
+```
+
+```ts [TypeScript]
+const result = await runner.run("Read the config file", {
+  tools: ["Read", "Grep"],
+});
+```
+
+```python [Python]
+result = await runner.run("Read the config file", ClaudeRunOptions(
+    tools=["Read", "Grep"],
 ))
 ```
 

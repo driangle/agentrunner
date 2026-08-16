@@ -24,6 +24,12 @@ class ClaudeRunOptions(RunOptions):
 
     allowed_tools: list[str] | None = None
     disallowed_tools: list[str] | None = None
+    # Exclusive whitelist of built-in tools (--tools). Unlike allowed_tools,
+    # which only pre-approves tools and leaves unlisted built-ins available,
+    # --tools replaces the built-in tool set, so every unlisted built-in is
+    # denied at registration. Use [""] to disable all tools, ["default"] for
+    # the full set, or explicit names. None leaves the CLI default.
+    tools: list[str] | None = None
     mcp_config: str | None = None
     json_schema: str | None = None
     max_budget_usd: float | None = None

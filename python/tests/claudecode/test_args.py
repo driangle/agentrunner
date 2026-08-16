@@ -56,6 +56,21 @@ class TestBuildArgs:
         assert "--disallowedTools" in args
         assert args[args.index("--disallowedTools") + 1] == "Bash"
 
+    def test_tools_joined_into_single_value(self):
+        opts = ClaudeRunOptions(tools=["Read", "Grep"])
+        args = build_args("hello", opts)
+        assert args.count("--tools") == 1
+        assert args[args.index("--tools") + 1] == "Read,Grep"
+
+    def test_tools_empty_string_disables_all(self):
+        opts = ClaudeRunOptions(tools=[""])
+        args = build_args("hello", opts)
+        assert args[args.index("--tools") + 1] == ""
+
+    def test_tools_omitted_when_unset_or_empty(self):
+        assert "--tools" not in build_args("hello", ClaudeRunOptions())
+        assert "--tools" not in build_args("hello", ClaudeRunOptions(tools=[]))
+
     def test_mcp_config(self):
         opts = ClaudeRunOptions(mcp_config="/path/to/config.json")
         args = build_args("hello", opts)

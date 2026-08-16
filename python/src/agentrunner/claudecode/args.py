@@ -26,6 +26,9 @@ def build_args(prompt: str, options: ClaudeRunOptions | None = None) -> list[str
         args.append("--dangerously-skip-permissions")
 
     # Claude-specific options.
+    # --tools takes a single comma-separated value, not repeated flags.
+    if options.tools:
+        args.extend(["--tools", ",".join(options.tools)])
     if options.allowed_tools:
         for tool in options.allowed_tools:
             args.extend(["--allowedTools", tool])

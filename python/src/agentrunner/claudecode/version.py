@@ -8,7 +8,8 @@ import re
 from ..errors import NotFoundError
 
 # Supported Claude Code CLI version range.
-MIN_VERSION = "1.0.12"
+# 2.1.0 is the first release that ships --tools (verified absent in 2.0.0).
+MIN_VERSION = "2.1.0"
 
 _VERSION_RE = re.compile(r"(\d+\.\d+\.\d+)")
 

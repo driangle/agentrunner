@@ -47,6 +47,17 @@ export interface ClaudeRunOptions extends RunOptions {
   /** Tools the agent may not use. */
   disallowedTools?: string[];
 
+  /**
+   * Exclusive whitelist of built-in tools (--tools). Unlike `allowedTools`,
+   * which only pre-approves tools and leaves unlisted built-ins available,
+   * `--tools` replaces the built-in tool set, so every unlisted built-in is
+   * denied at registration — including built-ins added by future CLI versions.
+   *
+   * Use `[""]` to disable all tools, `["default"]` to use all tools, or
+   * explicit names (e.g. `["Read", "Grep"]`). Omit to leave the CLI default.
+   */
+  tools?: string[];
+
   /** Path to MCP server configuration file. */
   mcpConfig?: string;
 

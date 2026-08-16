@@ -6,12 +6,12 @@ Python library for programmatically invoking AI coding agents. Part of the [agen
 
 | Runner      | CLI Version | Status |
 |-------------|-------------|--------|
-| Claude Code | >= 1.0.12   | ✅      |
+| Claude Code | >= 2.1.0   | ✅      |
 
 ## Requirements
 
 - Python >= 3.11
-- Claude Code CLI >= 1.0.12
+- Claude Code CLI >= 2.1.0
 
 ## Installation
 

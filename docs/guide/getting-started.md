@@ -26,7 +26,7 @@ You need the CLI for whichever runner you plan to use:
 
 | Runner | Requirement |
 |--------|-------------|
-| Claude Code | `claude` CLI >= 1.0.12 |
+| Claude Code | `claude` CLI >= 2.1.0 |
 | Ollama | Ollama server running at `localhost:11434` |
 
 ## Quick Example

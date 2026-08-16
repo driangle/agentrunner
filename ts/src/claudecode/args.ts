@@ -30,6 +30,10 @@ export function buildArgs(
   }
 
   // Claude-specific options.
+  // --tools takes a single comma-separated value, not repeated flags.
+  if (options.tools && options.tools.length > 0) {
+    args.push("--tools", options.tools.join(","));
+  }
   if (options.allowedTools) {
     for (const tool of options.allowedTools) {
       args.push("--allowedTools", tool);

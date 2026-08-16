@@ -55,6 +55,22 @@ describe("buildArgs", () => {
     expect(joined).toContain("--resume sess-123");
   });
 
+  it("joins tools into a single --tools value", () => {
+    const args = buildArgs("test", { tools: ["Read", "Grep"] });
+    expect(args.filter((a) => a === "--tools")).toHaveLength(1);
+    expect(args[args.indexOf("--tools") + 1]).toBe("Read,Grep");
+  });
+
+  it("passes an empty string to disable all tools", () => {
+    const args = buildArgs("test", { tools: [""] });
+    expect(args[args.indexOf("--tools") + 1]).toBe("");
+  });
+
+  it("omits --tools when unset or empty", () => {
+    expect(buildArgs("test", {})).not.toContain("--tools");
+    expect(buildArgs("test", { tools: [] })).not.toContain("--tools");
+  });
+
   it("includes session-id", () => {
     const args = buildArgs("test", { sessionId: "my-session-42" });
     const joined = args.join(" ");
