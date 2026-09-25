@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "driangle-agentrunner"
-version = "0.0.1"
+version = "0.0.2"
 description = "Python library for programmatically invoking AI coding agents"
 readme = "README.md"
 requires-python = ">=3.11"

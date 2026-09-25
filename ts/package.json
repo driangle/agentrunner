@@ -1,6 +1,6 @@
 {
   "name": "@driangle/agentrunner",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "TypeScript library for programmatically invoking AI coding agents",
   "type": "module",
   "main": "./dist/index.js",
