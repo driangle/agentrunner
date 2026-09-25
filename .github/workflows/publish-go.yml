@@ -14,39 +14,12 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: "1.22"
-      - run: make build-go
-      - run: make lint-go
-      - run: make test-go
-
-  check-ts:
-    name: Check TypeScript
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-      - run: cd ts && npm ci
-      - run: make build-ts
-      - run: make lint-ts
-      - run: make test-ts
-
-  check-python:
-    name: Check Python
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - run: make build-python
-      - run: make lint-python
-      - run: make test-python
+      - run: make check-go
 
   validate:
     name: Validate Go Module
     runs-on: ubuntu-latest
-    needs: [check-go, check-ts, check-python]
+    needs: check-go
     steps:
       - uses: actions/checkout@v4
 
@@ -69,10 +42,12 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ github.ref_name }}
-          name: "Go ${{ github.ref_name }}"
-          generate_release_notes: true
+        run: |
+          ./scripts/release-notes.sh "$GITHUB_REF_NAME" > notes.md
+          gh release create "$GITHUB_REF_NAME" --title "Go $GITHUB_REF_NAME" --notes-file notes.md
+        env:
+          GH_TOKEN: ${{ github.token }}

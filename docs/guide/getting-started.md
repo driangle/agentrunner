@@ -20,6 +20,8 @@ pip install driangle-agentrunner
 
 :::
 
+Each library is versioned independently, so version numbers differ across languages. Release notes for each are on the [GitHub releases page](https://github.com/driangle/agentrunner/releases), tagged `go/v*`, `ts/v*` and `python/v*`.
+
 ## Prerequisites
 
 You need the CLI for whichever runner you plan to use:

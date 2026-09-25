@@ -281,3 +281,13 @@ Or from the repo root:
 make check-ts  # build + lint + test
 make check     # all libraries
 ```
+
+## Releasing
+
+This library is tagged `ts/v*` and released independently of the other libraries:
+
+```bash
+./scripts/release.sh ts 0.1.0
+```
+
+See [RELEASING.md](../RELEASING.md) for details.

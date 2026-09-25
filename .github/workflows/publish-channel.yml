@@ -14,41 +14,25 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: "1.22"
-      - run: make build-go
-      - run: make lint-go
-      - run: make test-go
-
-  check-ts:
-    name: Check TypeScript
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-      - run: cd ts && npm ci
-      - run: make build-ts
-      - run: make lint-ts
-      - run: make test-ts
-
-  check-python:
-    name: Check Python
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - run: make build-python
-      - run: make lint-python
-      - run: make test-python
+      - run: make check-go
 
   cross-compile:
     name: Cross-compile binaries
-    needs: [check-go, check-ts, check-python]
+    needs: check-go
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Verify tag matches channel package versions
+        run: |
+          tag_version="${GITHUB_REF_NAME#channel/v}"
+          for pkg in npm/channel-*/package.json; do
+            pkg_version="$(jq -r .version "$pkg")"
+            if [ "$tag_version" != "$pkg_version" ]; then
+              echo "Tag version $tag_version does not match $pkg version $pkg_version"
+              exit 1
+            fi
+          done
 
       - uses: actions/setup-go@v5
         with:
@@ -180,6 +164,8 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/download-artifact@v4
         with:
@@ -187,9 +173,8 @@ jobs:
           path: dist/
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ github.ref_name }}
-          name: "Channel ${{ github.ref_name }}"
-          generate_release_notes: true
-          files: dist/*
+        run: |
+          ./scripts/release-notes.sh "$GITHUB_REF_NAME" > notes.md
+          gh release create "$GITHUB_REF_NAME" --title "Channel $GITHUB_REF_NAME" --notes-file notes.md dist/*
+        env:
+          GH_TOKEN: ${{ github.token }}

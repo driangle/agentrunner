@@ -24,6 +24,7 @@ Create a GitHub Actions workflow that automatically builds, signs, and publishes
 - [ ] Extract version from the git tag and verify it matches the build file version
 - [ ] Publish using the Maven Central publishing plugin (Sonatype OSSRH or Central Portal)
 - [ ] Document the release process in the Java library README
+- [ ] Add a `java` case to `scripts/release.sh` and `scripts/release-notes.sh`, add Java to the `/release` skill, and follow "Adding a new package" in `RELEASING.md`
 
 ## Acceptance Criteria
 

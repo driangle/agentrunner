@@ -278,18 +278,10 @@ Tests use a mock `CommandBuilder` to simulate CLI output without requiring the r
 
 ## Releasing
 
-Go modules are published automatically by the Go module proxy when a tag exists. This project uses an `go/v*` tag convention (matching the module subdirectory) to enable independent releases per language.
+The Go module is tagged `go/v*` (matching the module subdirectory) and released independently of the other libraries:
 
-To release a new version:
+```bash
+./scripts/release.sh go 0.1.0
+```
 
-1. Ensure `main` is clean and all checks pass (`make check-go`).
-2. Tag the release:
-   ```bash
-   git tag go/v0.1.0
-   git push origin go/v0.1.0
-   ```
-3. The `publish-go` GitHub Actions workflow will:
-   - Run `make check-go` to validate the module.
-   - Verify the module is fetchable on the Go module proxy.
-   - Create a GitHub Release with auto-generated notes.
-4. The module will be available on [pkg.go.dev](https://pkg.go.dev/github.com/driangle/agentrunner/go) shortly after.
+See [RELEASING.md](../RELEASING.md) for details.

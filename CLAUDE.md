@@ -24,6 +24,12 @@ When adding a new language library:
 
 This ensures every library is verified uniformly and the pre-commit hook catches regressions across all languages.
 
+## Releases
+
+Each package is versioned and released independently; `RELEASING.md` is the full guide. A release is a `<lang>/vX.Y.Z` tag (`go/`, `ts/`, `python/`, `channel/`) pushed by `./scripts/release.sh <lang> <version>` or the `/release` skill. Each tag triggers its own `.github/workflows/publish-<lang>.yml`, which runs only that package's checks. Never tag a bare `vX.Y.Z` — those are legacy lockstep tags.
+
+When adding a new language library, follow "Adding a new package" in `RELEASING.md`.
+
 ## Design Principles
 
 ### Common Runner interface

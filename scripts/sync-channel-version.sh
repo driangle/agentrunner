@@ -2,6 +2,9 @@
 # Synchronize the channel binary version across all npm platform packages
 # and the PyPI channel package.
 #
+# The TypeScript library's optionalDependencies pins are not touched here;
+# `scripts/release.sh ts` pins them to the current channel version.
+#
 # Usage: ./scripts/sync-channel-version.sh <version>
 #   version - semver version without 'v' prefix (e.g., 0.2.0)
 
@@ -21,18 +24,6 @@ for pkg_dir in npm/channel-*/; do
     echo "  Updated $pkg_dir/package.json"
   fi
 done
-
-# Update optionalDependencies in ts/package.json
-if [ -f "ts/package.json" ]; then
-  tmp=$(mktemp)
-  jq --arg v "$version" '
-    .optionalDependencies |= with_entries(
-      if .key | startswith("@driangle/agentrunner-channel-") then .value = $v else . end
-    )
-  ' ts/package.json > "$tmp"
-  mv "$tmp" ts/package.json
-  echo "  Updated ts/package.json optionalDependencies"
-fi
 
 # Update PyPI channel package version
 if [ -f "python/channel/pyproject.toml" ]; then

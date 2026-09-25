@@ -23,6 +23,8 @@ Language-native libraries for programmatically invoking AI coding agent CLIs.
 | TypeScript | [`ts/`](ts/)       | `@driangle/agentrunner` |
 | Python     | [`python/`](python/) | `driangle-agentrunner` |
 
+Each library is versioned and released independently, so version numbers differ across languages. Maintainers: see [RELEASING.md](RELEASING.md).
+
 ## Interface
 
 Each library implements a common Runner interface: `Run` returns a result, `Start`/`RunStream` streams messages. Options and results share the same shape across languages.

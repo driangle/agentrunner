@@ -1,0 +1,66 @@
+name: Publish Python Package
+
+on:
+  push:
+    tags:
+      - "python/v*"
+
+jobs:
+  check-python:
+    name: Check Python
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: make check-python
+
+  publish-pypi:
+    name: Publish to PyPI
+    needs: check-python
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Verify tag matches pyproject.toml version
+        run: |
+          tag_version="${GITHUB_REF_NAME#python/v}"
+          pkg_version="$(python -c 'import tomllib; print(tomllib.load(open("python/pyproject.toml", "rb"))["project"]["version"])')"
+          if [ "$tag_version" != "$pkg_version" ]; then
+            echo "Tag version $tag_version does not match python/pyproject.toml version $pkg_version"
+            exit 1
+          fi
+
+      - name: Build and publish
+        run: |
+          pip install build twine
+          cd python
+          python -m build
+          twine check dist/*
+          twine upload dist/*
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
+
+  release:
+    name: Create GitHub Release
+    needs: publish-pypi
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create GitHub Release
+        run: |
+          ./scripts/release-notes.sh "$GITHUB_REF_NAME" > notes.md
+          gh release create "$GITHUB_REF_NAME" --title "Python $GITHUB_REF_NAME" --notes-file notes.md
+        env:
+          GH_TOKEN: ${{ github.token }}
